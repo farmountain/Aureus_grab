@@ -1,4 +1,4 @@
-const { generateKeyPairSync, createSign, createVerify } = require('crypto');
+const { generateKeyPairSync, sign, verify, createPrivateKey, createPublicKey } = require('crypto');
 
 function canonicalize(obj){
   if(typeof obj !== 'object' || obj === null) return JSON.stringify(obj);
@@ -25,20 +25,18 @@ function generateKeypair(){
 }
 
 function signApproval(approvalObj, privateKeyDer){
-  const signer = createSign('SHA512');
   const payload = canonicalize(approvalObj);
-  signer.update(payload);
-  signer.end();
-  const sig = signer.sign({ key: privateKeyDer, format: 'der', type: 'pkcs8' });
+  const privateKey = createPrivateKey({ key: privateKeyDer, format: 'der', type: 'pkcs8' });
+  const sig = sign(null, Buffer.from(payload, 'utf8'), privateKey);
   return sig.toString('base64');
 }
 
 function verifyApproval(approvalObj, signatureBase64, publicKeyDer){
-  const verifier = createVerify('SHA512');
-  const payload = canonicalize(approvalObj);
-  verifier.update(payload);
-  verifier.end();
-  return verifier.verify({ key: publicKeyDer, format: 'der', type: 'spki' }, Buffer.from(signatureBase64,'base64'));
+  // Exclude signature field from verification payload
+  const { signature, ...payloadObj } = approvalObj;
+  const payload = canonicalize(payloadObj);
+  const publicKey = createPublicKey({ key: publicKeyDer, format: 'der', type: 'spki' });
+  return verify(null, Buffer.from(payload, 'utf8'), publicKey, Buffer.from(signatureBase64,'base64'));
 }
 
 function verifyApprovalStrict(approvalObj, signatureBase64, publicKeyDer, opts){

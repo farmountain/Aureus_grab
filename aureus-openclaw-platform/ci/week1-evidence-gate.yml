@@ -1,8 +1,7 @@
-# Week 1 CI placeholder: evidence-gate check (orchestration repo)
-# This is a lightweight PR-time check to ensure an evidence file exists.
-# Replace or expand with full lint/test/scan steps in subsequent changes.
+# Week 1 CI: evidence-gate check + test suite (orchestration repo)
+# Ensures evidence file exists and all Week 1 tests pass
 
-name: Week 1 Evidence Gate (placeholder)
+name: Week 1 Evidence Gate
 
 on:
   pull_request:
@@ -16,10 +15,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
       - name: Validate evidence file exists
         run: |
-          if [ -f aureus-openclaw-platform/docs/evidence/week-01.md ] || [ -f aureus-openclaw-platform/docs/evidence/template.md ]; then
+          if [ -f aureus-openclaw-platform/docs/evidence/week-01.md ]; then
             echo "Evidence present"
           else
             echo "Missing evidence file: please add aureus-openclaw-platform/docs/evidence/week-01.md" && exit 1
           fi
+
+      - name: Schema tests
+        run: node aureus-openclaw-platform/tests/schema-test-runner.js
+
+      - name: Signer tests
+        run: node aureus-openclaw-platform/tests/signer.test.js
+
+      - name: Integration test
+        run: node aureus-openclaw-platform/tests/integration.test.js
+
+      - name: Executor wrapper test
+        run: node aureus-openclaw-platform/tests/executor_wrapper.test.js
+
+      - name: KMS adapter test (conditional)
+        run: node aureus-openclaw-platform/tests/aws_kms_adapter.test.js
+        continue-on-error: true  # Skips if TEST_KMS_KEY_ARN not set

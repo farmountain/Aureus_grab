@@ -68,6 +68,7 @@ const server = http.createServer((req, res) => {
 });
 
 if(require.main === module){
+  ensureKeys(); // Generate keys and emit public key before starting server
   server.listen(PORT, () => console.log(`Bridge signer listening on ${PORT}`));
 }
 
