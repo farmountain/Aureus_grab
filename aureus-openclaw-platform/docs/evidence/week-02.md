@@ -44,9 +44,18 @@
 ## Tests & Validation
 
 ### Schema tests
-- **Status**: PASS (expected after implementation)
+- **Status**: ✅ PASS
 - **Command**: `node aureus-openclaw-platform/tests/schema-test-runner.js`
-- **Result**: All 5 schemas validate with strict requirements
+- **Result**: All 5 schemas validate with strict requirements and production-quality validation rules
+- **Date executed**: 2026-02-03
+
+### Backward compatibility check
+- **Status**: ✅ PASS  
+- **Result**: Week 1 test suite continues to pass with hardened schemas:
+  - Signer tests: PASS
+  - Executor wrapper tests: PASS
+  - Integration tests: PASS
+  - AWS KMS adapter tests: SKIP (conditional)
 
 ## Breaking Changes
 - Schema field renames for consistency (breaking for Week 1 clients):

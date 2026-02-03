@@ -3,13 +3,68 @@
   "title": "ExecutionApproval",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version","type","planId","signer","ttl","signature"],
+  "required": ["version", "type", "approvalId", "planId", "issuedAt", "expiresAt", "signature", "publicKey", "approvedBy"],
   "properties": {
-    "version": {"type":"string"},
-    "type": {"type":"string","const":"ExecutionApproval"},
-    "planId": {"type":"string"},
-    "signer": {"type":"string"},
-    "ttl": {"type":"string"},
-    "signature": {"type":"string"}
+    "version": {
+      "type": "string",
+      "pattern": "^1\\.0$"
+    },
+    "type": {
+      "type": "string",
+      "const": "approval.execution"
+    },
+    "approvalId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 identifier for this approval"
+    },
+    "planId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 of approved plan"
+    },
+    "issuedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Approval issuance timestamp"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Approval expiration timestamp"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+      "description": "Base64-encoded cryptographic signature"
+    },
+    "publicKey": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+      "description": "Base64-encoded public key for verification"
+    },
+    "approvedBy": {
+      "type": "string",
+      "enum": ["policy_engine", "human_operator"],
+      "description": "Approval authority"
+    },
+    "humanApprover": {
+      "type": "object",
+      "required": ["operatorId", "role"],
+      "properties": {
+        "operatorId": {"type": "string"},
+        "role": {
+          "type": "string",
+          "enum": ["admin", "operator", "reviewer"]
+        },
+        "timestamp": {"type": "string", "format": "date-time"}
+      },
+      "description": "Human approver details if approvedBy is human_operator"
+    },
+    "justification": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Approval justification or reasoning"
+    }
   }
 }

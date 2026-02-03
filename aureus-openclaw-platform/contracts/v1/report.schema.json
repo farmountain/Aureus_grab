@@ -3,12 +3,80 @@
   "title": "ExecutionReport",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version","type","reportId","status"],
+  "required": ["version", "type", "reportId", "approvalId", "planId", "startedAt", "completedAt", "status", "actions"],
   "properties": {
-    "version": {"type":"string"},
-    "type": {"type":"string","const":"ExecutionReport"},
-    "reportId": {"type":"string"},
-    "status": {"type":"string","enum":["success","failure","partial"]},
-    "details": {"type":"object"}
+    "version": {
+      "type": "string",
+      "pattern": "^1\\.0$"
+    },
+    "type": {
+      "type": "string",
+      "const": "report.execution"
+    },
+    "reportId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 identifier for this report"
+    },
+    "approvalId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 of approval used"
+    },
+    "planId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 of executed plan"
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Execution start timestamp"
+    },
+    "completedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Execution completion timestamp"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "partial_success", "failure", "denied", "expired"],
+      "description": "Overall execution status"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["actionId", "status"],
+        "properties": {
+          "actionId": {"type": "string"},
+          "status": {
+            "type": "string",
+            "enum": ["success", "failure", "skipped"]
+          },
+          "result": {"type": "object"},
+          "error": {"type": "string"},
+          "duration": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Execution duration in milliseconds"
+          },
+          "retries": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "description": "Individual action results"
+    },
+    "denialReason": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Reason if status is denied"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional execution metadata"
+    }
   }
 }

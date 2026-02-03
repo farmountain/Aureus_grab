@@ -3,11 +3,68 @@
   "title": "ContextSnapshot",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version","type","contextId"],
+  "required": ["version", "type", "contextId", "sessionId", "trustScore"],
   "properties": {
-    "version": {"type":"string"},
-    "type": {"type":"string","const":"ContextSnapshot"},
-    "contextId": {"type":"string"},
-    "state": {"type":"object"}
+    "version": {
+      "type": "string",
+      "pattern": "^1\\.0$"
+    },
+    "type": {
+      "type": "string",
+      "const": "context.snapshot"
+    },
+    "contextId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 identifier for this context"
+    },
+    "sessionId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 session identifier"
+    },
+    "trustScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Trust score between 0 and 1"
+    },
+    "recentActions": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "required": ["tool", "timestamp", "outcome"],
+        "properties": {
+          "tool": {"type": "string"},
+          "timestamp": {"type": "string", "format": "date-time"},
+          "outcome": {
+            "type": "string",
+            "enum": ["success", "failure", "denied"]
+          }
+        }
+      },
+      "description": "Recent action history (max 50)"
+    },
+    "violations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "message"],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "message": {"type": "string"},
+          "timestamp": {"type": "string", "format": "date-time"}
+        }
+      },
+      "description": "Policy violations"
+    },
+    "state": {
+      "type": "object",
+      "description": "Additional state data"
+    }
   }
 }

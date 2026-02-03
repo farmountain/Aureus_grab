@@ -3,13 +3,57 @@
   "title": "IntentEnvelope",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version","type","id","intent","context"],
+  "required": ["version", "type", "intentId", "channelId", "tool", "parameters", "riskLevel", "description"],
   "properties": {
-    "version": {"type":"string"},
-    "type": {"type":"string","const":"IntentEnvelope"},
-    "id": {"type":"string"},
-    "intent": {"type":"object"},
-    "context": {"type":"object"},
-    "meta": {"type":"object"}
+    "version": {
+      "type": "string",
+      "pattern": "^1\\.0$"
+    },
+    "type": {
+      "type": "string",
+      "const": "intent.envelope"
+    },
+    "intentId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 identifier for this intent"
+    },
+    "channelId": {
+      "type": "string",
+      "enum": ["telegram", "discord", "slack", "web", "api"],
+      "description": "Communication channel source"
+    },
+    "tool": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Tool name in snake_case format"
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Tool-specific parameters"
+    },
+    "riskLevel": {
+      "type": "string",
+      "enum": ["low", "medium", "high"],
+      "description": "Risk assessment level"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Human-readable intent description"
+    },
+    "userId": {
+      "type": "string",
+      "description": "Optional user identifier"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Intent creation timestamp"
+    },
+    "meta": {
+      "type": "object",
+      "description": "Optional metadata"
+    }
   }
 }

@@ -1,14 +1,76 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ProposedPlan",
+  "title": "ProposedActionPlan",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version","type","planId","steps"],
+  "required": ["version", "type", "planId", "intentId", "actions", "riskAssessment", "requiresHumanApproval"],
   "properties": {
-    "version": {"type":"string"},
-    "type": {"type":"string","const":"ProposedPlan"},
-    "planId": {"type":"string"},
-    "steps": {"type":"array"},
-    "risk": {"type":"string","enum":["low","medium","high"]}
+    "version": {
+      "type": "string",
+      "pattern": "^1\\.0$"
+    },
+    "type": {
+      "type": "string",
+      "const": "plan.proposed"
+    },
+    "planId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 identifier for this plan"
+    },
+    "intentId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 of originating intent"
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["actionId", "tool", "parameters", "riskLevel"],
+        "properties": {
+          "actionId": {"type": "string"},
+          "tool": {"type": "string"},
+          "parameters": {"type": "object"},
+          "riskLevel": {
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          },
+          "description": {"type": "string"}
+        }
+      },
+      "description": "Action steps (1-10 items)"
+    },
+    "riskAssessment": {
+      "type": "object",
+      "required": ["overallRiskScore", "overallRiskLevel"],
+      "properties": {
+        "overallRiskScore": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Aggregate risk score 0-1"
+        },
+        "overallRiskLevel": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Risk assessment explanation"
+        }
+      }
+    },
+    "requiresHumanApproval": {
+      "type": "boolean",
+      "description": "Whether human approval is required"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    }
   }
 }
