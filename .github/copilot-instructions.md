@@ -6,7 +6,7 @@ Purpose
 
 Big picture (read these first)
 --------------------------------
-- Two main local codebases live in `knowledgebase/`: `knowledgebase/openclaw` (OpenClaw runtime and channels, TypeScript ESM, plugins) and `knowledgebase/Aureus_Agentic_OS` (Aureus agentic OS monorepo with packages/runtime/CRV). See `knowledgebase/README.md` and `knowledgebase/aureus_openclaw_program_design.md` for context.
+- Two main local codebases live in `knowledgebase/`: `knowledgebase/openclaw` (OpenClaw runtime and channels, TypeScript ESM, plugins) and `knowledgebase/Aureus_Agentic_OS` (Aureus Agentic OS™ monorepo with packages/runtime/CRV). See `knowledgebase/README.md` and `knowledgebase/aureus_openclaw_program_design.md` for context.
 - Key contract/schema artifacts: `knowledgebase/aureus-openclaw-platform/contracts/v1/` and repo-level `contracts/v1/` (created by scaffold).
 - OpenSpec is used for spec-driven changes: see `openspec/config.yaml` and change artifacts under `openspec/changes/`.
 

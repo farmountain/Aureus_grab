@@ -1,7 +1,7 @@
 # Product Requirements Document — Aureus Project
 
 ## Purpose
-Deliver a production-ready Aureus agentic OS and OpenClaw platform as specified in repository `openspec` and `knowledgebase`. Provide a modular, testable runtime, channel integrations, and strict contract-driven schemas for safe, verifiable agent behavior.
+Deliver a production-ready Aureus Agentic OS™ and OpenClaw platform as specified in repository `openspec` and `knowledgebase`. Provide a modular, testable runtime, channel integrations, and strict contract-driven schemas for safe, verifiable agent behavior.
 
 ## Scope
 - Core runtime packages under `knowledgebase/Aureus_Agentic_OS/packages/` (kernel, crv, memory, policy, sdk)

@@ -1,12 +1,12 @@
 # Aureus Grab — Aureus + OpenClaw Integration
 
-An integration of [OpenClaw](https://github.com/openclaw) (previously Moltbot) with [Aureus Agentic OS](https://github.com/aureus) providing enterprise security enhancement and governance for AI agent actions through cryptographic signing and policy-based approval gates.
+An integration of [OpenClaw](https://github.com/openclaw) (previously Moltbot) with [Aureus Agentic OS™](https://github.com/aureus) providing enterprise security enhancement and governance for AI agent actions through cryptographic signing and policy-based approval gates.
 
 ## Overview
 
 **Aureus Grab** orchestrates the integration between:
 - **OpenClaw** (Body) — Multi-channel AI agent platform (Telegram, Discord, Slack, Web)
-- **Aureus Agentic OS** (Constitutional Brain) — Policy engine, risk assessment, audit trail, memory
+- **Aureus Agentic OS™** (Constitutional Brain) — Policy engine, risk assessment, audit trail, memory
 - **Bridge** — Signed-plan protocol enforcing cryptographic approval before action execution
 
 ### Architecture
@@ -228,7 +228,7 @@ MIT License — See [LICENSE](LICENSE)
 
 - **GitHub**: https://github.com/farmountain/Aureus_grab
 - **OpenClaw**: https://github.com/openclaw
-- **Aureus Agentic OS**: https://github.com/aureus
+- **Aureus Agentic OS™**: https://github.com/aureus
 - **OpenSpec**: [openspec/specs/aureus-openclaw.spec.md](openspec/specs/aureus-openclaw.spec.md)
 
 ---
