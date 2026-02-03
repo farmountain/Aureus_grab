@@ -3,12 +3,11 @@
   "title": "ContextSnapshot",
   "type": "object",
   "additionalProperties": false,
+  "required": ["version","type","contextId"],
   "properties": {
-    "version": {"type": "string"},
-    "type": {"const": "ContextSnapshot"},
-    "sessionId": {"type": "string"},
-    "userId": {"type": "string"},
-    "metadata": {"type": "object"}
-  },
-  "required": ["version","type","sessionId","userId"]
+    "version": {"type":"string"},
+    "type": {"type":"string","const":"ContextSnapshot"},
+    "contextId": {"type":"string"},
+    "state": {"type":"object"}
+  }
 }

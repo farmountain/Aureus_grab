@@ -3,14 +3,13 @@
   "title": "ExecutionApproval",
   "type": "object",
   "additionalProperties": false,
+  "required": ["version","type","planId","signer","ttl","signature"],
   "properties": {
-    "version": {"type": "string"},
-    "type": {"const": "ExecutionApproval"},
-    "approvalId": {"type": "string"},
-    "planId": {"type": "string"},
-    "issuedAt": {"type": "string", "format": "date-time"},
-    "expiresAt": {"type": "string", "format": "date-time"},
-    "signature": {"type": "string"}
-  },
-  "required": ["version","type","approvalId","planId","issuedAt","expiresAt","signature"]
+    "version": {"type":"string"},
+    "type": {"type":"string","const":"ExecutionApproval"},
+    "planId": {"type":"string"},
+    "signer": {"type":"string"},
+    "ttl": {"type":"string"},
+    "signature": {"type":"string"}
+  }
 }

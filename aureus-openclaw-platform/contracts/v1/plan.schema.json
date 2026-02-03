@@ -1,13 +1,14 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ProposedActionPlan",
+  "title": "ProposedPlan",
   "type": "object",
   "additionalProperties": false,
+  "required": ["version","type","planId","steps"],
   "properties": {
-    "version": {"type": "string"},
-    "type": {"const": "ProposedActionPlan"},
-    "planId": {"type": "string"},
-    "steps": {"type": "array"}
-  },
-  "required": ["version","type","planId","steps"]
+    "version": {"type":"string"},
+    "type": {"type":"string","const":"ProposedPlan"},
+    "planId": {"type":"string"},
+    "steps": {"type":"array"},
+    "risk": {"type":"string","enum":["low","medium","high"]}
+  }
 }

@@ -16,6 +16,9 @@ weeks/
 adoption/
 capabilities/
 
+# All knowledgebase content (external repos and reference docs)
+knowledgebase/
+
 # Node modules
 node_modules/
 package-lock.json

@@ -3,13 +3,13 @@
   "title": "IntentEnvelope",
   "type": "object",
   "additionalProperties": false,
+  "required": ["version","type","id","intent","context"],
   "properties": {
-    "version": {"type": "string"},
-    "type": {"const": "IntentEnvelope"},
-    "id": {"type": "string"},
-    "userId": {"type": "string"},
-    "timestamp": {"type": "string", "format": "date-time"},
-    "payload": {"type": "object"}
-  },
-  "required": ["version","type","id","userId","timestamp"]
+    "version": {"type":"string"},
+    "type": {"type":"string","const":"IntentEnvelope"},
+    "id": {"type":"string"},
+    "intent": {"type":"object"},
+    "context": {"type":"object"},
+    "meta": {"type":"object"}
+  }
 }

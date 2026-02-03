@@ -3,13 +3,12 @@
   "title": "ExecutionReport",
   "type": "object",
   "additionalProperties": false,
+  "required": ["version","type","reportId","status"],
   "properties": {
-    "version": {"type": "string"},
-    "type": {"const": "ExecutionReport"},
-    "reportId": {"type": "string"},
-    "approvalId": {"type": "string"},
-    "status": {"type": "string"},
-    "details": {"type": "object"}
-  },
-  "required": ["version","type","reportId","approvalId","status"]
+    "version": {"type":"string"},
+    "type": {"type":"string","const":"ExecutionReport"},
+    "reportId": {"type":"string"},
+    "status": {"type":"string","enum":["success","failure","partial"]},
+    "details": {"type":"object"}
+  }
 }
