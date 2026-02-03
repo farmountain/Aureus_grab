@@ -1,0 +1,25 @@
+# Week 1 CI placeholder: evidence-gate check (orchestration repo)
+# This is a lightweight PR-time check to ensure an evidence file exists.
+# Replace or expand with full lint/test/scan steps in subsequent changes.
+
+name: Week 1 Evidence Gate (placeholder)
+
+on:
+  pull_request:
+    paths:
+      - 'aureus-openclaw-platform/**'
+
+jobs:
+  evidence-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate evidence file exists
+        run: |
+          if [ -f aureus-openclaw-platform/docs/evidence/week-01.md ] || [ -f aureus-openclaw-platform/docs/evidence/template.md ]; then
+            echo "Evidence present"
+          else
+            echo "Missing evidence file: please add aureus-openclaw-platform/docs/evidence/week-01.md" && exit 1
+          fi

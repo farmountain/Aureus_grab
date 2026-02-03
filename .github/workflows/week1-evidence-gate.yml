@@ -1,0 +1,54 @@
+name: Week 1 Evidence Gate
+
+on:
+  pull_request:
+    paths:
+      - 'aureus-openclaw-platform/**'
+
+jobs:
+  evidence-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Validate evidence file exists
+        run: |
+          EVIDENCE_PATH="aureus-openclaw-platform/docs/evidence/week-01.md"
+          TEMPLATE_PATH="aureus-openclaw-platform/docs/evidence/template.md"
+          if [ -f "$EVIDENCE_PATH" ] || [ -f "$TEMPLATE_PATH" ]; then
+            echo "Evidence present"
+          else
+            echo "Missing evidence file: please add $EVIDENCE_PATH" && exit 1
+          fi
+
+      - name: Placeholder: Run schema tests
+        run: |
+          echo "Running orchestration schema tests"
+          node aureus-openclaw-platform/tests/schema-test-runner.js
+
+      - name: Run signer unit tests
+        run: |
+          echo "Running signer unit tests"
+          node aureus-openclaw-platform/tests/signer.test.js
+
+      - name: Run bridge integration test (starts bridge server)
+        run: |
+          echo "Running integration tests"
+          node aureus-openclaw-platform/tests/integration.test.js
+
+      - name: Run executor wrapper tests
+        run: |
+          echo "Running executor wrapper tests"
+          node aureus-openclaw-platform/tests/executor_wrapper.test.js
+
+      - name: Run AWS KMS adapter test (optional)
+        if: ${{ secrets.TEST_KMS_KEY_ARN }}
+        run: |
+          echo "Running AWS KMS adapter test"
+          node aureus-openclaw-platform/tests/aws_kms_adapter.test.js

@@ -1,0 +1,34 @@
+# Internal agent framework (not part of deliverable)
+.agents/
+.amazonq/
+
+# IDE and workspace files
+.vscode/
+*.code-workspace
+
+# External repos (use submodules instead)
+knowledgebase/Aureus_Agentic_OS/
+knowledgebase/openclaw/
+knowledgebase/aureus-openclaw-platform/
+
+# Planning artifacts (not implementation)
+weeks/
+adoption/
+capabilities/
+
+# Node modules
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+
+# Environment files
+.env
+.env.local
+
+# Test outputs
+coverage/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

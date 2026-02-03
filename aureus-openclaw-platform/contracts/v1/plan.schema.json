@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProposedActionPlan",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {"type": "string"},
+    "type": {"const": "ProposedActionPlan"},
+    "planId": {"type": "string"},
+    "steps": {"type": "array"}
+  },
+  "required": ["version","type","planId","steps"]
+}

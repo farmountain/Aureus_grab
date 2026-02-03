@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ContextSnapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version","type","contextId"],
+  "properties": {
+    "version": {"type":"string"},
+    "type": {"type":"string","const":"ContextSnapshot"},
+    "contextId": {"type":"string"},
+    "state": {"type":"object"}
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IntentEnvelope",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {"type": "string"},
+    "type": {"const": "IntentEnvelope"},
+    "id": {"type": "string"},
+    "userId": {"type": "string"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "payload": {"type": "object"}
+  },
+  "required": ["version","type","id","userId","timestamp"]
+}

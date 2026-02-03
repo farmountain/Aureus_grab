@@ -1,0 +1,9 @@
+{
+  "name": "aureus-openclaw-scaffold",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "schema-lint": "node tests/schema-test-runner.js",
+    "test": "node tests/schema-test-runner.js"
+  }
+}
