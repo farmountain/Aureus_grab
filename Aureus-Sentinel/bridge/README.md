@@ -7,7 +7,7 @@ This bridge mediates between OpenClaw and Aureus. Responsibilities:
 - Persist events for replay and audit.
 
 Development:
-- Start with a minimal PoC (see `knowledgebase/aureus-openclaw-platform/bridge/README.md`).
+- Start with a minimal PoC (see `knowledgebase/Aureus-Sentinel/bridge/README.md`).
 - Add signer/verifier client and schema tests as next tasks.
 
 KMS Integration:

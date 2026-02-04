@@ -1,6 +1,6 @@
 # Evidence Template — Week X
 
-Use this template to attach required evidence for a PR. Place a copy at `aureus-openclaw-platform/docs/evidence/week-01.md` for Week 1.
+Use this template to attach required evidence for a PR. Place a copy at `Aureus-Sentinel/docs/evidence/week-01.md` for Week 1.
 
 - Title: 
 - Change / PR: 

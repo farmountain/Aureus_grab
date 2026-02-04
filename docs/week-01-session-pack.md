@@ -13,12 +13,12 @@ Objectives
 
 Deliverables
 ------------
-- `aureus-openclaw-platform/` scaffold (README, docs, contracts, bridge, tests, ci)
+- `Aureus-Sentinel/` scaffold (README, docs, contracts, bridge, tests, ci)
 - Architecture overview and diagrams (`docs/architecture_overview.md`, `docs/architecture/*.md`)
-- Evidence ledger template: `aureus-openclaw-platform/docs/evidence/template.md`
+- Evidence ledger template: `Aureus-Sentinel/docs/evidence/template.md`
 - CI workflow: `.github/workflows/week1-evidence-gate.yml` (runs schema, signer, integration, executor tests)
-- Contract placeholders: `aureus-openclaw-platform/contracts/v1/*.schema.json`
-- Tests: schema test runner and signer/integration/executor tests under `aureus-openclaw-platform/tests/`
+- Contract placeholders: `Aureus-Sentinel/contracts/v1/*.schema.json`
+- Tests: schema test runner and signer/integration/executor tests under `Aureus-Sentinel/tests/`
 - PR draft: `docs/PR_DRAFT_Signer_Executor.md`
 
 Session Plan
@@ -37,7 +37,7 @@ Day 2 — Scaffold & Docs (4 hours)
 
 Day 3 — CI & Tests (6 hours)
 - Add schema placeholders under `contracts/v1` (1h)
-- Implement `aureus-openclaw-platform/tests/schema-test-runner.js` (1h)
+- Implement `Aureus-Sentinel/tests/schema-test-runner.js` (1h)
 - Add signer PoC and tests (`bridge/signer.js`, `tests/signer.test.js`) (2h)
 - Add integration and executor wrapper tests (2h)
 
@@ -49,23 +49,23 @@ Labs (step-by-step)
 -------------------
 Lab 1 — Repo scaffold (30–60m)
 - Verify the following folders exist:
-  - `aureus-openclaw-platform/docs`
-  - `aureus-openclaw-platform/contracts/v1`
-  - `aureus-openclaw-platform/bridge`
-  - `aureus-openclaw-platform/tests`
+  - `Aureus-Sentinel/docs`
+  - `Aureus-Sentinel/contracts/v1`
+  - `Aureus-Sentinel/bridge`
+  - `Aureus-Sentinel/tests`
   - `.github/workflows`
-- Confirm `aureus-openclaw-platform/README.md` describes the orchestration repo.
+- Confirm `Aureus-Sentinel/README.md` describes the orchestration repo.
 
 Lab 2 — Evidence ledger enforcement (30–60m)
-- Ensure `aureus-openclaw-platform/docs/evidence/template.md` exists.
-- Verify `.github/workflows/week1-evidence-gate.yml` fails when `aureus-openclaw-platform/docs/evidence/week-01.md` is missing.
+- Ensure `Aureus-Sentinel/docs/evidence/template.md` exists.
+- Verify `.github/workflows/week1-evidence-gate.yml` fails when `Aureus-Sentinel/docs/evidence/week-01.md` is missing.
 
 Lab 3 — Contract skeleton + schema test (30–90m)
 - Confirm placeholder schemas exist in `contracts/v1/` (intent, context, plan, approval, report).
 - Run schema checks:
 
 ```bash
-node aureus-openclaw-platform/tests/schema-test-runner.js
+node Aureus-Sentinel/tests/schema-test-runner.js
 ```
 
 CI Tasks
@@ -75,7 +75,7 @@ CI Tasks
 - Run signer unit tests and integration tests (server starts ephemeral keys).
 - Conditionally run AWS KMS adapter test if `TEST_KMS_KEY_ARN` secret present.
 
-Evidence Checklist (add to `aureus-openclaw-platform/docs/evidence/week-01.md`)
+Evidence Checklist (add to `Aureus-Sentinel/docs/evidence/week-01.md`)
 - Title, PR link, Author(s), Date
 - Summary of change
 - Tests & Validation: schema test output, signer tests, integration tests
@@ -101,17 +101,17 @@ Acceptance Criteria for Week 1
 - CI evidence-gate workflow present and configured to run tests.
 - Schema placeholders and schema test runner pass locally.
 - Signer PoC + tests run and pass locally (or in CI with secrets configured).
-- PR created with evidence file `aureus-openclaw-platform/docs/evidence/week-01.md` and linked `openspec` proposal.
+- PR created with evidence file `Aureus-Sentinel/docs/evidence/week-01.md` and linked `openspec` proposal.
 
 Artifacts Created (this session)
 --------------------------------
-- `aureus-openclaw-platform/README.md`
+- `Aureus-Sentinel/README.md`
 - `docs/architecture_overview.md` and `docs/architecture/*`
-- `aureus-openclaw-platform/contracts/v1/*.json` schema placeholders
-- `aureus-openclaw-platform/bridge/signer.js` and `bridge/server.js` PoC
-- `aureus-openclaw-platform/tests/*` schema/signer/integration/executor tests
+- `Aureus-Sentinel/contracts/v1/*.json` schema placeholders
+- `Aureus-Sentinel/bridge/signer.js` and `bridge/server.js` PoC
+- `Aureus-Sentinel/tests/*` schema/signer/integration/executor tests
 - `.github/workflows/week1-evidence-gate.yml`
-- `aureus-openclaw-platform/docs/evidence/template.md` and `docs/PR_DRAFT_Signer_Executor.md`
+- `Aureus-Sentinel/docs/evidence/template.md` and `docs/PR_DRAFT_Signer_Executor.md`
 
 Notes & Next Steps
 ------------------

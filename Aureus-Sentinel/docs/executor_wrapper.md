@@ -44,4 +44,4 @@ Examples & Test Cases
 - Skill hash mismatch -> reject
 
 Where to implement
-- Provide the reference implementation as a small module in OpenClaw codebase: `openclaw/executor/wrapper.js` and unit tests that use fixtures from `aureus-openclaw-platform/contracts/v1/`.
+- Provide the reference implementation as a small module in OpenClaw codebase: `openclaw/executor/wrapper.js` and unit tests that use fixtures from `Aureus-Sentinel/contracts/v1/`.

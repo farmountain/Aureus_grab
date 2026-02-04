@@ -1,10 +1,10 @@
-# Aureus Grab — Aureus + OpenClaw Integration
+# Aureus-Sentinel — Aureus + OpenClaw Integration
 
 An integration of [OpenClaw](https://github.com/openclaw) (previously Moltbot) with [Aureus Agentic OS™](https://github.com/aureus) providing enterprise security enhancement and governance for AI agent actions through cryptographic signing and policy-based approval gates.
 
 ## Overview
 
-**Aureus Grab** orchestrates the integration between:
+**Aureus-Sentinel** orchestrates the integration between:
 - **OpenClaw** (Body) — Multi-channel AI agent platform (Telegram, Discord, Slack, Web)
 - **Aureus Agentic OS™** (Constitutional Brain) — Policy engine, risk assessment, audit trail, memory
 - **Bridge** — Signed-plan protocol enforcing cryptographic approval before action execution
@@ -58,11 +58,11 @@ An integration of [OpenClaw](https://github.com/openclaw) (previously Moltbot) w
 
 ```bash
 # Clone repository
-git clone https://github.com/farmountain/Aureus_grab.git
-cd Aureus_grab
+git clone https://github.com/farmountain/Aureus-Sentinel.git
+cd Aureus-Sentinel
 
 # Install dependencies (bridge service)
-cd aureus-openclaw-platform/bridge
+cd Aureus-Sentinel/bridge
 npm install
 
 # Run tests
@@ -77,7 +77,7 @@ node tests/executor_wrapper.test.js
 
 ```bash
 # Development (ephemeral keys)
-cd aureus-openclaw-platform/bridge
+cd Aureus-Sentinel/bridge
 node server.js
 
 # Production (with KMS)
@@ -98,7 +98,7 @@ See [docs/week-04-session-pack.md](docs/week-04-session-pack.md) for detailed Op
 ## Repository Structure
 
 ```
-aureus-openclaw-platform/     # Orchestration repo
+Aureus-Sentinel/     # Orchestration repo
 ├── contracts/v1/             # JSON Schema contracts
 │   ├── intent.schema.json
 │   ├── context.schema.json
@@ -165,16 +165,16 @@ openspec/                     # OpenSpec proposals
 **Week 13** — Pilot deployment + monitoring  
 **Week 14** — Executive readiness + handoff
 
-See [aureus-openclaw-platform/docs/implementation_backlog.md](aureus-openclaw-platform/docs/implementation_backlog.md) for detailed roadmap.
+See [Aureus-Sentinel/docs/implementation_backlog.md](Aureus-Sentinel/docs/implementation_backlog.md) for detailed roadmap.
 
 ## Documentation
 
 - **[PRD](docs/PRD_Aureus_Project.md)** — Product requirements and success metrics
 - **[Requirements](docs/Requirements_Aureus.md)** — Functional and non-functional requirements
 - **[Architecture Overview](docs/architecture_overview.md)** — System design and interfaces
-- **[Architecture Diagrams](aureus-openclaw-platform/docs/architecture/)** — Component and sequence diagrams
+- **[Architecture Diagrams](Aureus-Sentinel/docs/architecture/)** — Component and sequence diagrams
 - **[Key Management Guide](docs/key_management_and_kms.md)** — KMS integration and rotation
-- **[Executor Wrapper Reference](aureus-openclaw-platform/docs/executor_wrapper_reference.js)** — Enforcement implementation
+- **[Executor Wrapper Reference](Aureus-Sentinel/docs/executor_wrapper_reference.js)** — Enforcement implementation
 - **[Session Packs](docs/)** — Week-by-week execution guides
 
 ## Testing
@@ -183,21 +183,21 @@ All tests passing:
 
 ```bash
 # Schema validation
-node aureus-openclaw-platform/tests/schema-test-runner.js
+node Aureus-Sentinel/tests/schema-test-runner.js
 # OK: All 5 schemas valid
 
 # Signer unit tests
-node aureus-openclaw-platform/tests/signer.test.js
+node Aureus-Sentinel/tests/signer.test.js
 # OK: Valid signature verified
 # OK: Tampered payload detected
 # OK: Expired approval logic
 
 # Integration tests
-node aureus-openclaw-platform/tests/integration.test.js
+node Aureus-Sentinel/tests/integration.test.js
 # OK: Bridge sign + verify
 
 # Executor wrapper tests
-node aureus-openclaw-platform/tests/executor_wrapper.test.js
+node Aureus-Sentinel/tests/executor_wrapper.test.js
 # OK: Low-risk allowed
 # OK: High-risk rejected without approval
 # OK: Expired approval rejected
@@ -206,7 +206,7 @@ node aureus-openclaw-platform/tests/executor_wrapper.test.js
 ## Contributing
 
 This project follows **Evidence-Gated Development**:
-1. All PRs must include evidence file in `aureus-openclaw-platform/docs/evidence/`
+1. All PRs must include evidence file in `Aureus-Sentinel/docs/evidence/`
 2. CI enforces evidence presence and test passage
 3. See [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md)
 
@@ -218,7 +218,7 @@ This project follows **Evidence-Gated Development**:
 - **Signature Verification**: Executor validates signatures before tool execution
 - **Audit Trail**: All actions logged with cryptographic proof
 
-Report security issues to: [farmountain/Aureus_grab/security](https://github.com/farmountain/Aureus_grab/security)
+Report security issues to: [farmountain/Aureus-Sentinel/security](https://github.com/farmountain/Aureus-Sentinel/security)
 
 ## License
 
@@ -226,7 +226,7 @@ MIT License — See [LICENSE](LICENSE)
 
 ## Links
 
-- **GitHub**: https://github.com/farmountain/Aureus_grab
+- **GitHub**: https://github.com/farmountain/Aureus-Sentinel
 - **OpenClaw**: https://github.com/openclaw
 - **Aureus Agentic OS™**: https://github.com/aureus
 - **OpenSpec**: [openspec/specs/aureus-openclaw.spec.md](openspec/specs/aureus-openclaw.spec.md)

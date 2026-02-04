@@ -1,4 +1,4 @@
-# Aureus-OpenClaw Platform (orchestration repo)
+# Aureus-Sentinel Platform (orchestration repo)
 
 This orchestration layout coordinates Aureus and OpenClaw integration: contracts, bridge, tests, and CI.
 

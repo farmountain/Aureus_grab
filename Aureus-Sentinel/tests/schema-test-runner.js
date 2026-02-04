@@ -10,7 +10,7 @@ const dir = path.join(__dirname, '..', 'contracts', 'v1');
 if(!fs.existsSync(dir)) fail(`Contracts directory not found: ${dir}`);
 
 const files = fs.readdirSync(dir).filter(f=>f.endsWith('.json'));
-if(files.length===0) fail('No schema files found in aureus-openclaw-platform/contracts/v1');
+if(files.length===0) fail('No schema files found in Aureus-Sentinel/contracts/v1');
 
 files.forEach(f=>{
   const p = path.join(dir, f);

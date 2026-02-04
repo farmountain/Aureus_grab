@@ -6,7 +6,7 @@ name: Week 1 Evidence Gate
 on:
   pull_request:
     paths:
-      - 'aureus-openclaw-platform/**'
+      - 'Aureus-Sentinel/**'
 
 jobs:
   evidence-check:
@@ -22,24 +22,24 @@ jobs:
 
       - name: Validate evidence file exists
         run: |
-          if [ -f aureus-openclaw-platform/docs/evidence/week-01.md ]; then
-            echo "Evidence present"
+          if [ -f Aureus-Sentinel/docs/evidence/week-01.md ]; then
+            echo "Evidence file found."
           else
-            echo "Missing evidence file: please add aureus-openclaw-platform/docs/evidence/week-01.md" && exit 1
+            echo "Missing evidence file: please add Aureus-Sentinel/docs/evidence/week-01.md" && exit 1
           fi
 
       - name: Schema tests
-        run: node aureus-openclaw-platform/tests/schema-test-runner.js
+        run: node Aureus-Sentinel/tests/schema-test-runner.js
 
       - name: Signer tests
-        run: node aureus-openclaw-platform/tests/signer.test.js
+        run: node Aureus-Sentinel/tests/signer.test.js
 
       - name: Integration test
-        run: node aureus-openclaw-platform/tests/integration.test.js
+        run: node Aureus-Sentinel/tests/integration.test.js
 
       - name: Executor wrapper test
-        run: node aureus-openclaw-platform/tests/executor_wrapper.test.js
+        run: node Aureus-Sentinel/tests/executor_wrapper.test.js
 
       - name: KMS adapter test (conditional)
-        run: node aureus-openclaw-platform/tests/aws_kms_adapter.test.js
+        run: node Aureus-Sentinel/tests/aws_kms_adapter.test.js
         continue-on-error: true  # Skips if TEST_KMS_KEY_ARN not set

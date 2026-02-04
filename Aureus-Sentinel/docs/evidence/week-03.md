@@ -42,22 +42,22 @@
 ## Files Added/Modified
 
 ### New Files
-- `aureus-openclaw-platform/bridge/schema_validator.js` - JSON Schema validation utility
-- `aureus-openclaw-platform/bridge/aureus_stub.js` - Aureus decision engine stub
-- `aureus-openclaw-platform/bridge/event_store.js` - Event persistence for replay
-- `aureus-openclaw-platform/bridge/replay_harness.js` - Replay utility with comparison
-- `aureus-openclaw-platform/bridge/audit_logger.js` - Tamper-evident audit trail
-- `aureus-openclaw-platform/tests/bridge_flow.test.js` - Integration tests for full flow
-- `aureus-openclaw-platform/tests/audit_logger.test.js` - Audit logger tests
+- `Aureus-Sentinel/bridge/schema_validator.js` - JSON Schema validation utility
+- `Aureus-Sentinel/bridge/aureus_stub.js` - Aureus decision engine stub
+- `Aureus-Sentinel/bridge/event_store.js` - Event persistence for replay
+- `Aureus-Sentinel/bridge/replay_harness.js` - Replay utility with comparison
+- `Aureus-Sentinel/bridge/audit_logger.js` - Tamper-evident audit trail
+- `Aureus-Sentinel/tests/bridge_flow.test.js` - Integration tests for full flow
+- `Aureus-Sentinel/tests/audit_logger.test.js` - Audit logger tests
 
 ### Modified Files
-- `aureus-openclaw-platform/bridge/server.js` - Added /intents endpoint, integrated audit logging
+- `Aureus-Sentinel/bridge/server.js` - Added /intents endpoint, integrated audit logging
 
 ## Tests & Validation
 
 ### Bridge Flow Tests
 - **Status**: ✅ PASS
-- **Command**: `node aureus-openclaw-platform/tests/bridge_flow.test.js`
+- **Command**: `node Aureus-Sentinel/tests/bridge_flow.test.js`
 - **Coverage**:
   - Low-risk intent with auto-approval (200 response)
   - High-risk intent requiring human approval (202 response)
@@ -68,7 +68,7 @@
 
 ### Audit Logger Tests
 - **Status**: ✅ PASS
-- **Command**: `node aureus-openclaw-platform/tests/audit_logger.test.js`
+- **Command**: `node Aureus-Sentinel/tests/audit_logger.test.js`
 - **Coverage**:
   - Hash chain creation with genesis block
   - Sequential hash linkage

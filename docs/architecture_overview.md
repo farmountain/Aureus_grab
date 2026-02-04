@@ -37,5 +37,5 @@ All contracts are strict JSON Schema with `additionalProperties: false`, include
 
 ## Next artifacts to create
 - Detailed sequence diagrams for each flow
-- JSON Schema definitions under `aureus-openclaw-platform/contracts/v1/`
+- JSON Schema definitions under `Aureus-Sentinel/contracts/v1/`
 - Signer/verifier prototype and unit tests

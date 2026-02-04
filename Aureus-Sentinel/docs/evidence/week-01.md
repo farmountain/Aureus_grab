@@ -10,13 +10,13 @@
 
 ### Schema tests
 - **Status**: PASS
-- **Command**: `node aureus-openclaw-platform/tests/schema-test-runner.js`
+- **Command**: `node Aureus-Sentinel/tests/schema-test-runner.js`
 - **Output**: All 5 schemas validated (intent, context, plan, approval, report)
 - **Result**: OK: all schemas have `additionalProperties: false` and required fields
 
 ### Signer unit tests
 - **Status**: PASS
-- **Command**: `node aureus-openclaw-platform/tests/signer.test.js`
+- **Command**: `node Aureus-Sentinel/tests/signer.test.js`
 - **Output**: 
   - OK: valid signature verified
   - OK: tampered payload detected
@@ -25,7 +25,7 @@
 
 ### Integration tests (Bridge server)
 - **Status**: PASS
-- **Command**: `node aureus-openclaw-platform/tests/integration.test.js`
+- **Command**: `node Aureus-Sentinel/tests/integration.test.js`
 - **Output**: 
   - Bridge started with ephemeral keypair
   - PUBLIC_KEY_BASE64 emitted
@@ -34,7 +34,7 @@
 
 ### Executor wrapper tests
 - **Status**: PASS
-- **Command**: `node aureus-openclaw-platform/tests/executor_wrapper.test.js`
+- **Command**: `node Aureus-Sentinel/tests/executor_wrapper.test.js`
 - **Output**:
   - OK: low-risk allowed without human approval
   - OK: high-risk rejected without human approval
@@ -59,11 +59,11 @@
 
 ## Artifacts
 
-- **Architecture docs**: `docs/architecture_overview.md`, `aureus-openclaw-platform/docs/architecture/`
-- **Contract schemas**: `aureus-openclaw-platform/contracts/v1/*.schema.json`
-- **Signer PoC**: `aureus-openclaw-platform/bridge/signer.js`, `bridge/server.js`
-- **Executor wrapper**: `aureus-openclaw-platform/docs/executor_wrapper_reference.js`
-- **Tests**: `aureus-openclaw-platform/tests/*.js`
+- **Architecture docs**: `docs/architecture_overview.md`, `Aureus-Sentinel/docs/architecture/`
+- **Contract schemas**: `Aureus-Sentinel/contracts/v1/*.schema.json`
+- **Signer PoC**: `Aureus-Sentinel/bridge/signer.js`, `bridge/server.js`
+- **Executor wrapper**: `Aureus-Sentinel/docs/executor_wrapper_reference.js`
+- **Tests**: `Aureus-Sentinel/tests/*.js`
 - **CI logs**: (link to GitHub Actions run once PR opened)
 - **Key management docs**: `docs/key_management_and_kms.md`, `docs/aws_kms_integration.md`
 

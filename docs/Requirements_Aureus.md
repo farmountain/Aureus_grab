@@ -43,7 +43,7 @@ This document consolidates functional and non-functional requirements, constrain
 
 ## Next Steps
 - Create `openspec` change(s) for Week 1 scaffold and contract v1.
-- Scaffold orchestration repo `aureus-openclaw-platform/` and CI placeholders.
+- Scaffold orchestration repo `Aureus-Sentinel/` and CI placeholders.
 - Implement minimal signer/verifier prototype and schema test harness.
 
 Generated: 2026-02-03

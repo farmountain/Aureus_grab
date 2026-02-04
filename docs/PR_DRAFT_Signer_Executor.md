@@ -18,10 +18,10 @@ Openspec changes:
 - openspec/changes/aws-kms-integration/proposal.md
 
 Files of interest:
-- aureus-openclaw-platform/bridge/signer.js
-- aureus-openclaw-platform/bridge/server.js
-- aureus-openclaw-platform/contracts/v1/*.json
-- aureus-openclaw-platform/tests/*.js
+- Aureus-Sentinel/bridge/signer.js
+- Aureus-Sentinel/bridge/server.js
+- Aureus-Sentinel/contracts/v1/*.json
+- Aureus-Sentinel/tests/*.js
 - .github/workflows/week1-evidence-gate.yml
 - docs/key_management_and_kms.md
 - docs/aws_kms_integration.md
@@ -29,7 +29,7 @@ Files of interest:
 Checklist (for reviewers):
 - [ ] Spec updated and linked above
 - [ ] Tests pass locally and in CI
-- [ ] Evidence file added to `aureus-openclaw-platform/docs/evidence/` (week-01.md)
+- [ ] Evidence file added to `Aureus-Sentinel/docs/evidence/` (week-01.md)
 - [ ] Threat model updated if required
 - [ ] Key management guidance reviewed and approved
 

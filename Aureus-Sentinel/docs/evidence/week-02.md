@@ -45,7 +45,7 @@
 
 ### Schema tests
 - **Status**: ✅ PASS
-- **Command**: `node aureus-openclaw-platform/tests/schema-test-runner.js`
+- **Command**: `node Aureus-Sentinel/tests/schema-test-runner.js`
 - **Result**: All 5 schemas validate with strict requirements and production-quality validation rules
 - **Date executed**: 2026-02-03
 
@@ -72,8 +72,8 @@
 Week 1 contracts were placeholders. No clients exist yet, so no migration required. Future changes will require versioned schemas (v1 → v2).
 
 ## Artifacts
-- Hardened schemas: `aureus-openclaw-platform/contracts/v1/*.schema.json` (5 files)
-- Evidence file: `aureus-openclaw-platform/docs/evidence/week-02.md`
+- Hardened schemas: `Aureus-Sentinel/contracts/v1/*.schema.json` (5 files)
+- Evidence file: `Aureus-Sentinel/docs/evidence/week-02.md`
 
 ## Reviewer Checklist
 - [x] Spec updated (openspec/changes/week-02-contract-hardening/proposal.md)

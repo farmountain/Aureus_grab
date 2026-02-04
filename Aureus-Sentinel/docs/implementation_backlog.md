@@ -67,7 +67,7 @@ Epic E5 — Policy Engine & Deny-by-Default Profiles (Week 4-5)
   - Estimate: 5d
 
 Notes
-- Each epic should create a corresponding `openspec` change under `openspec/changes/` and add evidence artifacts to `aureus-openclaw-platform/docs/evidence/`.
+- Each epic should create a corresponding `openspec` change under `openspec/changes/` and add evidence artifacts to `Aureus-Sentinel/docs/evidence/`.
 - Keep changes small and gated: spec → tests → code → evidence.
 
 Next immediate work items:

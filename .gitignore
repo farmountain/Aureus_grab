@@ -9,7 +9,7 @@
 # External repos (use submodules instead)
 knowledgebase/Aureus_Agentic_OS/
 knowledgebase/openclaw/
-knowledgebase/aureus-openclaw-platform/
+knowledgebase/Aureus-Sentinel/
 
 # Planning artifacts (not implementation)
 weeks/
