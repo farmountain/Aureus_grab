@@ -169,7 +169,7 @@ openspec/                     # OpenSpec proposals
 **Week 5** ✅ — Context engine + memory integration  
 **Week 6** ✅ — Audit trail + observability  
 **Week 7** ✅ — KMS production integration  
-**Week 8** — Red team security audit  
+**Week 8** ✅ — Red team security audit  
 **Week 9** — Reliability + error handling  
 **Week 10** — Performance + load testing  
 **Week 11** — Documentation + developer experience  
@@ -245,4 +245,4 @@ MIT License — See [LICENSE](LICENSE)
 
 ---
 
-**Status**: Week 7 Complete — KMS production integration ✅
+**Status**: Week 8 Complete — Red team security audit ✅

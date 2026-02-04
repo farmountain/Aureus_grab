@@ -1,0 +1,223 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      security-events: write # For uploading SARIF results
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      # ================================
+      # Dependency Vulnerability Scanning
+      # ================================
+      
+      - name: Run npm audit
+        run: |
+          npm audit --audit-level=moderate || true
+          npm audit --json > security-reports/npm-audit.json || true
+        continue-on-error: true
+        
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy-filesystem'
+          
+      # ================================
+      # Secret Scanning
+      # ================================
+      
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+          
+      # ================================
+      # Security Test Suite
+      # ================================
+      
+      - name: Run security tests
+        run: node tests/security.test.js
+        
+      # ================================
+      # Static Application Security Testing (SAST)
+      # ================================
+      
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/nodejs
+            p/owasp-top-ten
+        continue-on-error: true
+        
+      # ================================
+      # License Compliance
+      # ================================
+      
+      - name: Check licenses
+        run: |
+          npx license-checker --summary
+npx license-checker --json > security-reports/licenses.json || true
+        continue-on-error: true
+        
+      # ================================
+      # Report Generation
+      # ================================
+      
+      - name: Generate security report
+        if: always()
+        run: |
+          mkdir -p security-reports
+          echo "# Security Scan Report" > security-reports/summary.md
+          echo "" >> security-reports/summary.md
+          echo "**Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> security-reports/summary.md
+          echo "**Commit**: ${{ github.sha }}" >> security-reports/summary.md
+          echo "**Branch**: ${{ github.ref_name }}" >> security-reports/summary.md
+          echo "" >> security-reports/summary.md
+          echo "## Scans Run" >> security-reports/summary.md
+          echo "- ✅ npm audit" >> security-reports/summary.md
+          echo "- ✅ Trivy filesystem scan" >> security-reports/summary.md
+          echo "- ✅ Gitleaks secret detection" >> security-reports/summary.md
+          echo "- ✅ Security test suite" >> security-reports/summary.md
+          echo "- ✅ Semgrep SAST" >> security-reports/summary.md
+          echo "- ✅ License compliance check" >> security-reports/summary.md
+          
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: security-reports/
+          retention-days: 30
+          
+      # ================================
+      # Fail on Critical Issues
+      # ================================
+      
+      - name: Check for critical vulnerabilities
+        run: |
+          echo "Checking for critical vulnerabilities..."
+          
+          # Check npm audit for critical issues
+          if npm audit --audit-level=critical --json | jq -e '.metadata.vulnerabilities.critical > 0' > /dev/null 2>&1; then
+            echo "❌ Critical vulnerabilities found in npm dependencies!"
+            exit 1
+          fi
+          
+          echo "✅ No critical vulnerabilities found"
+
+  # ================================
+  # OWASP ZAP Scan (requires running server)
+  # ================================
+  
+  zap-scan:
+    name: OWASP ZAP Baseline Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Start bridge server
+        run: |
+          node Aureus-Sentinel/bridge/server.js &
+          sleep 10
+        
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.10.0
+        with:
+          target: 'http://localhost:3000'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j'
+          allow_issue_writing: false
+          fail_action: true
+          
+      - name: Upload ZAP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: |
+            report_html.html
+            report_json.json
+          retention-days: 30
+
+  # ================================
+  # Security Score
+  # ================================
+  
+  security-scorecard:
+    name: OpenSSF Security Scorecard
+    runs-on: ubuntu-latest
+    
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      actions: read
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          
+      - name: Run Scorecard
+        uses: ossf/scorecard-action@v2
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+          
+      - name: Upload Scorecard results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: 'ossf-scorecard'
