@@ -139,7 +139,10 @@ services:
 
   # Aureus Agentic OS (Policy Engine)
   aureus-os:
-    image: aureus/agentic-os:latest  # Replace with actual image
+    build:
+      context: ./Aureus_Agentic_OS
+      dockerfile: Dockerfile
+    image: aureus/agentic-os:latest
     container_name: aureus-os
     depends_on:
       postgres:

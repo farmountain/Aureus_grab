@@ -1,0 +1,24 @@
+{
+  "name": "@aureus-sentinel/demo",
+  "version": "1.0.0",
+  "description": "End-to-end demo client for Aureus Sentinel",
+  "main": "demo-client.js",
+  "scripts": {
+    "demo": "node demo-client.js",
+    "demo:watch": "nodemon demo-client.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "aureus",
+    "sentinel",
+    "demo"
+  ],
+  "author": "Aureus Team",
+  "license": "MIT"
+}
