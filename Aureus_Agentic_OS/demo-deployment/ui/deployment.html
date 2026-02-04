@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deployment Manager - Aureus Console</title>
+  <script src="/persona-utils.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 15px;
+    }
+
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      transition: background 0.2s;
+    }
+
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .tabs {
+      display: flex;
+      background: #f7f9fc;
+      border-bottom: 1px solid #e1e8ed;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 500;
+      color: #8492a6;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: #667eea;
+    }
+
+    .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+      background: white;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #2d3748;
+    }
+
+    .deployments-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      gap: 20px;
+    }
+
+    .deployment-card {
+      background: #f7f9fc;
+      border: 2px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 20px;
+      transition: all 0.2s;
+    }
+
+    .deployment-card:hover {
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    }
+
+    .deployment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 15px;
+    }
+
+    .deployment-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .deployment-env {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .env-staging {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .env-production {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .deployment-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .deployment-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-pending { background: #e0e7ff; color: #3730a3; }
+    .status-testing { background: #fef3c7; color: #92400e; }
+    .status-approved { background: #d1fae5; color: #065f46; }
+    .status-rejected { background: #fee2e2; color: #991b1b; }
+    .status-deployed { background: #dcfce7; color: #166534; }
+    .status-failed { background: #fecaca; color: #991b1b; }
+
+    .deployment-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-secondary {
+      background: #e1e8ed;
+      color: #64748b;
+    }
+
+    .btn-secondary:hover {
+      background: #cbd5e0;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #2d3748;
+    }
+
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e1e8ed;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .test-results {
+      margin-top: 15px;
+    }
+
+    .test-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: white;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .test-name {
+      font-size: 14px;
+      color: #2d3748;
+    }
+
+    .test-status {
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .test-passed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .test-failed {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #2d3748;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .alert {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .alert-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .alert-info {
+      background: #e0e7ff;
+      color: #3730a3;
+      border: 1px solid #c7d2fe;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #8492a6;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+
+    .empty-state-text {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .audit-log {
+      background: #f7f9fc;
+      border: 1px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .audit-entry {
+      padding: 12px;
+      background: white;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .audit-timestamp {
+      font-size: 12px;
+      color: #8492a6;
+      margin-bottom: 5px;
+    }
+
+    .audit-message {
+      font-size: 14px;
+      color: #2d3748;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>🚀 Deployment Manager</h1>
+        <p>Promote validated workflows from staging to production with auditable approvals</p>
+      </div>
+      <div class="nav-links">
+        <a href="/devops" class="nav-link">DevOps</a>
+        <a href="/wizard" class="nav-link">Workflow Wizard</a>
+        <a href="/studio" class="nav-link">DAG Studio</a>
+        <a href="/test" class="nav-link">Test & Validate</a>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('overview')">Overview</div>
+      <div class="tab" onclick="switchTab('staging')">Staging</div>
+      <div class="tab" onclick="switchTab('production')">Production</div>
+      <div class="tab" onclick="switchTab('pipeline')">Pipeline Status</div>
+      <div class="tab" onclick="switchTab('artifacts')">Build Artifacts</div>
+      <div class="tab" onclick="switchTab('health')">Health & Drift</div>
+      <div class="tab" onclick="switchTab('create')">Create Deployment</div>
+    </div>
+
+    <div class="content">
+      <!-- Overview Tab -->
+      <div id="overview-tab" class="tab-content active">
+        <div class="section">
+          <div class="section-title">All Deployments</div>
+          <div id="all-deployments" class="deployments-grid">
+            <div class="empty-state">
+              <div class="empty-state-icon">📦</div>
+              <div class="empty-state-text">No deployments yet</div>
+              <p>Create your first deployment to get started</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Staging Tab -->
+      <div id="staging-tab" class="tab-content">
+        <div class="section">
+          <div class="section-title">Staging Deployments</div>
+          <div id="staging-deployments" class="deployments-grid">
+            <div class="empty-state">
+              <div class="empty-state-icon">🧪</div>
+              <div class="empty-state-text">No staging deployments</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Production Tab -->
+      <div id="production-tab" class="tab-content">
+        <div class="section">
+          <div class="section-title">Production Deployments</div>
+          <div id="production-deployments" class="deployments-grid">
+            <div class="empty-state">
+              <div class="empty-state-icon">🎯</div>
+              <div class="empty-state-text">No production deployments</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pipeline Status Tab -->
+      <div id="pipeline-tab" class="tab-content">
+        <div class="section">
+          <div class="section-title">CI/CD Pipeline Status</div>
+          
+          <div class="alert alert-info" style="margin-bottom: 20px;">
+            <strong>ℹ️ Pipeline Monitoring:</strong> View real-time status of CI/CD pipelines, workflow runs, and deployment jobs.
+          </div>
+
+          <div id="pipeline-status-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+            <!-- Pipeline status cards will be inserted here -->
+          </div>
+
+          <div class="section-title" style="margin-top: 30px;">Recent Pipeline Runs</div>
+          <div id="pipeline-runs-list">
+            <div class="empty-state">
+              <div class="empty-state-icon">🔄</div>
+              <div class="empty-state-text">Loading pipeline status...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Build Artifacts Tab -->
+      <div id="artifacts-tab" class="tab-content">
+        <div class="section">
+          <div class="section-title">Build Artifacts</div>
+          
+          <div class="alert alert-info" style="margin-bottom: 20px;">
+            <strong>📦 Artifact Management:</strong> View, download, and manage build artifacts for deployments.
+          </div>
+
+          <div style="margin-bottom: 20px;">
+            <button class="btn btn-primary" onclick="refreshArtifacts()">🔄 Refresh</button>
+            <button class="btn btn-secondary" onclick="cleanupOldArtifacts()">🗑️ Cleanup Old Artifacts</button>
+          </div>
+
+          <div id="artifacts-list">
+            <div class="empty-state">
+              <div class="empty-state-icon">📦</div>
+              <div class="empty-state-text">Loading artifacts...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Health & Drift Tab -->
+      <div id="health-tab" class="tab-content">
+        <div class="section">
+          <div class="section-title">System Health Monitoring</div>
+          
+          <div id="health-summary" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-bottom: 30px;">
+            <!-- Health status cards -->
+          </div>
+
+          <div class="section-title" style="margin-top: 30px;">Environment Drift Detection</div>
+          <div class="alert alert-info" style="margin-bottom: 20px;">
+            <strong>⚠️ Drift Monitoring:</strong> Detect configuration drift between environments and deployed versions.
+          </div>
+
+          <div id="drift-checks">
+            <div class="empty-state">
+              <div class="empty-state-icon">🔍</div>
+              <div class="empty-state-text">Loading drift checks...</div>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top: 30px;">Rollback Status</div>
+          <div id="rollback-status">
+            <div class="empty-state">
+              <div class="empty-state-icon">↩️</div>
+              <div class="empty-state-text">No recent rollbacks</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create Deployment Tab -->
+      <div id="create-tab" class="tab-content">
+        <div class="section">
+          <div class="section-title">Create New Deployment</div>
+          
+          <div id="create-alert"></div>
+
+          <form id="create-deployment-form">
+            <div class="form-group">
+              <label class="form-label">Workflow Specification</label>
+              <textarea class="form-textarea" id="workflow-spec" placeholder='{"id": "my-workflow", "name": "My Workflow", "tasks": [], "dependencies": {}}'></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Version</label>
+              <input type="text" class="form-input" id="version" placeholder="1.0.0" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Environment</label>
+              <select class="form-select" id="environment" required>
+                <option value="staging">Staging</option>
+                <option value="production">Production</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Created By</label>
+              <input type="text" class="form-input" id="created-by" placeholder="username" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Description (Optional)</label>
+              <textarea class="form-textarea" id="description" placeholder="Describe this deployment..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create Deployment</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Approval Modal -->
+  <div id="approval-modal" class="modal">
+    <div class="modal-content">
+      <h2 class="modal-title">Approve Deployment</h2>
+      
+      <div class="form-group">
+        <label class="form-label">Risk Tier</label>
+        <select class="form-select" id="approval-risk-tier">
+          <option value="LOW">Low</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="HIGH">High</option>
+          <option value="CRITICAL">Critical</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Approval Token</label>
+        <input type="text" class="form-input" id="approval-token" placeholder="Enter approval token" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Comment (Optional)</label>
+        <textarea class="form-textarea" id="approval-comment" placeholder="Add approval comment..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('approval-modal')">Cancel</button>
+        <button class="btn btn-success" onclick="submitApproval()">Approve</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div id="reject-modal" class="modal">
+    <div class="modal-content">
+      <h2 class="modal-title">Reject Deployment</h2>
+      
+      <div class="form-group">
+        <label class="form-label">Reason</label>
+        <textarea class="form-textarea" id="reject-reason" placeholder="Explain why this deployment is being rejected..." required></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('reject-modal')">Cancel</button>
+        <button class="btn btn-danger" onclick="submitRejection()">Reject</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentDeploymentId = null;
+    let deployments = [];
+
+    // Tab switching
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      document.querySelector(`.tab:nth-child(${getTabIndex(tabName)})`).classList.add('active');
+      document.getElementById(`${tabName}-tab`).classList.add('active');
+
+      if (tabName !== 'create') {
+        loadDeployments();
+      }
+    }
+
+    function getTabIndex(tabName) {
+      const tabs = ['overview', 'staging', 'production', 'create'];
+      return tabs.indexOf(tabName) + 1;
+    }
+
+    // Load deployments
+    async function loadDeployments() {
+      try {
+        const response = await fetch('/api/deployments', {
+          headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          }
+        });
+
+        if (!response.ok) throw new Error('Failed to load deployments');
+
+        deployments = await response.json();
+        renderDeployments();
+      } catch (error) {
+        console.error('Error loading deployments:', error);
+        showAlert('create', 'error', 'Failed to load deployments: ' + error.message);
+      }
+    }
+
+    // Render deployments
+    function renderDeployments() {
+      const allDeployments = document.getElementById('all-deployments');
+      const stagingDeployments = document.getElementById('staging-deployments');
+      const productionDeployments = document.getElementById('production-deployments');
+
+      allDeployments.innerHTML = '';
+      stagingDeployments.innerHTML = '';
+      productionDeployments.innerHTML = '';
+
+      if (deployments.length === 0) {
+        allDeployments.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No deployments yet</div></div>';
+        return;
+      }
+
+      deployments.forEach(summary => {
+        const card = createDeploymentCard(summary);
+        allDeployments.appendChild(card.cloneNode(true));
+
+        if (summary.deployment.environment === 'staging') {
+          stagingDeployments.appendChild(card.cloneNode(true));
+        } else {
+          productionDeployments.appendChild(card.cloneNode(true));
+        }
+      });
+    }
+
+    // Create deployment card
+    function createDeploymentCard(summary) {
+      const { deployment, version, requiresApproval, testsPassed, canPromote } = summary;
+      
+      const card = document.createElement('div');
+      card.className = 'deployment-card';
+      
+      const testsHtml = deployment.testResults && deployment.testResults.length > 0 
+        ? `<div class="test-results">
+             ${deployment.testResults.map(t => 
+               `<div class="test-item">
+                  <span class="test-name">${t.testName}</span>
+                  <span class="test-status ${t.status === 'passed' ? 'test-passed' : 'test-failed'}">${t.status}</span>
+                </div>`
+             ).join('')}
+           </div>`
+        : '';
+
+      const actions = [];
+      
+      if (deployment.status === 'pending' && requiresApproval) {
+        actions.push(`<button class="btn btn-success" onclick="openApprovalModal('${deployment.id}')">Approve</button>`);
+        actions.push(`<button class="btn btn-danger" onclick="openRejectModal('${deployment.id}')">Reject</button>`);
+      }
+      
+      if (deployment.status === 'approved') {
+        actions.push(`<button class="btn btn-primary" onclick="completeDeployment('${deployment.id}')">Deploy</button>`);
+      }
+      
+      if (canPromote) {
+        actions.push(`<button class="btn btn-success" onclick="promoteToProduction('${deployment.id}')">Promote to Production</button>`);
+      }
+
+      if (deployment.status === 'deployed' && deployment.environment === 'staging') {
+        actions.push(`<button class="btn btn-secondary" onclick="runSmokeTests('${deployment.id}')">Run Tests</button>`);
+      }
+
+      card.innerHTML = `
+        <div class="deployment-header">
+          <div class="deployment-title">${version.workflowId} v${version.version}</div>
+          <span class="deployment-env env-${deployment.environment}">${deployment.environment}</span>
+        </div>
+        <div class="deployment-meta">
+          <div><strong>Status:</strong> <span class="deployment-status status-${deployment.status}">${deployment.status}</span></div>
+          <div><strong>Deployment ID:</strong> ${deployment.id}</div>
+          <div><strong>Version ID:</strong> ${deployment.versionId}</div>
+          ${deployment.deployedAt ? `<div><strong>Deployed:</strong> ${new Date(deployment.deployedAt).toLocaleString()}</div>` : ''}
+          ${deployment.deployedBy ? `<div><strong>Deployed By:</strong> ${deployment.deployedBy}</div>` : ''}
+          ${requiresApproval ? '<div><strong>⚠️ Requires Approval</strong></div>' : ''}
+        </div>
+        ${testsHtml}
+        ${actions.length > 0 ? `<div class="deployment-actions">${actions.join('')}</div>` : ''}
+      `;
+
+      return card;
+    }
+
+    // Create deployment form
+    document.getElementById('create-deployment-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const workflowSpecText = document.getElementById('workflow-spec').value;
+      const version = document.getElementById('version').value;
+      const environment = document.getElementById('environment').value;
+      const createdBy = document.getElementById('created-by').value;
+      const description = document.getElementById('description').value;
+
+      try {
+        // Parse workflow spec
+        const workflowSpec = JSON.parse(workflowSpecText);
+        
+        // Register version
+        const versionResponse = await fetch('/api/deployments/versions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({
+            workflowSpec,
+            version,
+            createdBy,
+            metadata: { description }
+          })
+        });
+
+        if (!versionResponse.ok) throw new Error('Failed to register version');
+        
+        const versionData = await versionResponse.json();
+
+        // Create deployment
+        const deploymentResponse = await fetch('/api/deployments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({
+            versionId: versionData.id,
+            environment,
+            deployedBy: createdBy,
+            metadata: { description }
+          })
+        });
+
+        if (!deploymentResponse.ok) throw new Error('Failed to create deployment');
+
+        showAlert('create', 'success', 'Deployment created successfully!');
+        document.getElementById('create-deployment-form').reset();
+        
+        // Switch to overview tab
+        switchTab('overview');
+      } catch (error) {
+        showAlert('create', 'error', 'Failed to create deployment: ' + error.message);
+      }
+    });
+
+    // Modal functions
+    function openApprovalModal(deploymentId) {
+      currentDeploymentId = deploymentId;
+      document.getElementById('approval-modal').classList.add('active');
+    }
+
+    function openRejectModal(deploymentId) {
+      currentDeploymentId = deploymentId;
+      document.getElementById('reject-modal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+      currentDeploymentId = null;
+    }
+
+    async function submitApproval() {
+      const riskTier = document.getElementById('approval-risk-tier').value;
+      const token = document.getElementById('approval-token').value;
+      const comment = document.getElementById('approval-comment').value;
+
+      try {
+        const response = await fetch(`/api/deployments/${currentDeploymentId}/approve`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({
+            riskTier,
+            approvalToken: token,
+            comment
+          })
+        });
+
+        if (!response.ok) throw new Error('Failed to approve deployment');
+
+        closeModal('approval-modal');
+        loadDeployments();
+        showAlert('create', 'success', 'Deployment approved successfully!');
+      } catch (error) {
+        showAlert('create', 'error', 'Failed to approve: ' + error.message);
+      }
+    }
+
+    async function submitRejection() {
+      const reason = document.getElementById('reject-reason').value;
+
+      try {
+        const response = await fetch(`/api/deployments/${currentDeploymentId}/reject`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({
+            reason
+          })
+        });
+
+        if (!response.ok) throw new Error('Failed to reject deployment');
+
+        closeModal('reject-modal');
+        loadDeployments();
+        showAlert('create', 'success', 'Deployment rejected successfully!');
+      } catch (error) {
+        showAlert('create', 'error', 'Failed to reject: ' + error.message);
+      }
+    }
+
+    async function completeDeployment(deploymentId) {
+      if (!confirm('Are you sure you want to deploy this workflow?')) return;
+
+      try {
+        const response = await fetch(`/api/deployments/${deploymentId}/complete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({})
+        });
+
+        if (!response.ok) throw new Error('Failed to complete deployment');
+
+        loadDeployments();
+        showAlert('create', 'success', 'Deployment completed successfully!');
+      } catch (error) {
+        showAlert('create', 'error', 'Failed to deploy: ' + error.message);
+      }
+    }
+
+    async function promoteToProduction(deploymentId) {
+      if (!confirm('Are you sure you want to promote this deployment to production?')) return;
+
+      try {
+        const response = await fetch(`/api/deployments/${deploymentId}/promote`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({})
+        });
+
+        if (!response.ok) throw new Error('Failed to promote deployment');
+
+        loadDeployments();
+        showAlert('create', 'success', 'Deployment promoted to production!');
+      } catch (error) {
+        showAlert('create', 'error', 'Failed to promote: ' + error.message);
+      }
+    }
+
+    async function runSmokeTests(deploymentId) {
+      try {
+        // In production, these tests should be configured per deployment
+        // For now, using basic smoke tests
+        const response = await fetch(`/api/deployments/${deploymentId}/tests`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+          },
+          body: JSON.stringify({
+            tests: [
+              { name: 'Basic Connectivity', workflowId: deploymentId + '-connectivity' },
+              { name: 'Data Validation', workflowId: deploymentId + '-validation' }
+            ]
+          })
+        });
+
+        if (!response.ok) throw new Error('Failed to run tests');
+
+        loadDeployments();
+        showAlert('create', 'success', 'Smoke tests completed!');
+      } catch (error) {
+        showAlert('create', 'error', 'Failed to run tests: ' + error.message);
+      }
+    }
+
+    function showAlert(tabId, type, message) {
+      const alertDiv = document.getElementById(`${tabId}-alert`);
+      if (!alertDiv) return;
+
+      alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+      setTimeout(() => {
+        alertDiv.innerHTML = '';
+      }, 5000);
+    }
+
+    // Pipeline Status Functions
+    async function loadPipelineStatus() {
+      try {
+        // Mock data - in production, this would fetch from GitHub API or CI/CD system
+        const pipelineData = {
+          overall: { success: 45, failed: 3, running: 2, total: 50 },
+          recent: [
+            { id: 1, name: 'Deploy Console', status: 'success', duration: '5m 23s', timestamp: new Date().toISOString() },
+            { id: 2, name: 'Build Packages', status: 'running', duration: '2m 15s', timestamp: new Date().toISOString() },
+            { id: 3, name: 'Run Tests', status: 'success', duration: '8m 42s', timestamp: new Date(Date.now() - 3600000).toISOString() }
+          ]
+        };
+
+        // Display pipeline summary
+        const statusGrid = document.getElementById('pipeline-status-grid');
+        statusGrid.innerHTML = `
+          <div class="deployment-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600;">Total Runs</span>
+              <span style="font-size: 24px; font-weight: 700; color: #667eea;">${pipelineData.overall.total}</span>
+            </div>
+          </div>
+          <div class="deployment-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600;">✅ Success</span>
+              <span style="font-size: 24px; font-weight: 700; color: #10b981;">${pipelineData.overall.success}</span>
+            </div>
+          </div>
+          <div class="deployment-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600;">❌ Failed</span>
+              <span style="font-size: 24px; font-weight: 700; color: #ef4444;">${pipelineData.overall.failed}</span>
+            </div>
+          </div>
+          <div class="deployment-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600;">🔄 Running</span>
+              <span style="font-size: 24px; font-weight: 700; color: #f59e0b;">${pipelineData.overall.running}</span>
+            </div>
+          </div>
+        `;
+
+        // Display recent runs
+        const runsList = document.getElementById('pipeline-runs-list');
+        if (pipelineData.recent.length === 0) {
+          runsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔄</div><div class="empty-state-text">No pipeline runs</div></div>';
+        } else {
+          runsList.innerHTML = pipelineData.recent.map(run => {
+            const statusColor = run.status === 'success' ? '#10b981' : run.status === 'failed' ? '#ef4444' : '#f59e0b';
+            const statusIcon = run.status === 'success' ? '✅' : run.status === 'failed' ? '❌' : '🔄';
+            return `
+              <div class="deployment-card" style="margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <div style="font-weight: 600; font-size: 16px; margin-bottom: 5px;">${statusIcon} ${run.name}</div>
+                    <div style="font-size: 12px; color: #8492a6;">Duration: ${run.duration}</div>
+                  </div>
+                  <div style="text-align: right;">
+                    <div style="color: ${statusColor}; font-weight: 600; text-transform: uppercase; font-size: 12px;">${run.status}</div>
+                    <div style="font-size: 12px; color: #8492a6;">${new Date(run.timestamp).toLocaleString()}</div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (error) {
+        console.error('Failed to load pipeline status:', error);
+      }
+    }
+
+    // Build Artifacts Functions
+    async function loadArtifacts() {
+      try {
+        // Mock data - in production, fetch from artifact storage
+        const artifacts = [
+          { name: 'console-app-v1.2.3.tar.gz', size: '15.3 MB', created: new Date(Date.now() - 3600000).toISOString(), version: 'v1.2.3', type: 'deployment' },
+          { name: 'console-app-v1.2.2.tar.gz', size: '15.1 MB', created: new Date(Date.now() - 86400000).toISOString(), version: 'v1.2.2', type: 'deployment' },
+          { name: 'kernel-packages-v0.1.1.tar.gz', size: '8.7 MB', created: new Date(Date.now() - 172800000).toISOString(), version: 'v0.1.1', type: 'packages' }
+        ];
+
+        const artifactsList = document.getElementById('artifacts-list');
+        if (artifacts.length === 0) {
+          artifactsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><div class="empty-state-text">No artifacts available</div></div>';
+        } else {
+          artifactsList.innerHTML = artifacts.map(artifact => `
+            <div class="deployment-card" style="margin-bottom: 15px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="flex: 1;">
+                  <div style="font-weight: 600; font-size: 16px; margin-bottom: 5px;">📦 ${artifact.name}</div>
+                  <div style="font-size: 12px; color: #8492a6;">
+                    Size: ${artifact.size} | Type: ${artifact.type} | Created: ${new Date(artifact.created).toLocaleString()}
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                  <button class="btn btn-secondary" onclick="downloadArtifact('${artifact.name}')" style="padding: 8px 16px; font-size: 14px;">⬇️ Download</button>
+                  <button class="btn btn-danger" onclick="deleteArtifact('${artifact.name}')" style="padding: 8px 16px; font-size: 14px;">🗑️</button>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Failed to load artifacts:', error);
+      }
+    }
+
+    async function refreshArtifacts() {
+      await loadArtifacts();
+    }
+
+    async function downloadArtifact(name) {
+      alert(`Downloading ${name}...`);
+      // In production, trigger download from artifact storage
+    }
+
+    async function deleteArtifact(name) {
+      if (!confirm(`Delete artifact ${name}?`)) return;
+      alert(`Deleted ${name}`);
+      await loadArtifacts();
+    }
+
+    async function cleanupOldArtifacts() {
+      if (!confirm('Remove artifacts older than 90 days?')) return;
+      alert('Cleanup initiated...');
+      await loadArtifacts();
+    }
+
+    // Health & Drift Functions
+    async function loadHealthStatus() {
+      try {
+        // Fetch health status
+        const healthResponse = await fetch('/health').catch(() => ({ ok: false }));
+        const healthData = healthResponse.ok ? await healthResponse.json().catch(() => ({})) : {};
+
+        // Display health summary
+        const healthSummary = document.getElementById('health-summary');
+        const components = [
+          { name: 'Console API', status: healthData.status === 'healthy' ? 'healthy' : 'unhealthy', uptime: '99.9%' },
+          { name: 'State Store', status: 'healthy', latency: '12ms' },
+          { name: 'Event Log', status: 'healthy', writes: '1.2K/min' },
+          { name: 'Observability', status: 'healthy', metrics: '50+' }
+        ];
+
+        healthSummary.innerHTML = components.map(comp => {
+          const isHealthy = comp.status === 'healthy';
+          return `
+            <div class="deployment-card">
+              <div style="text-align: center;">
+                <div style="font-size: 32px; margin-bottom: 10px;">${isHealthy ? '✅' : '❌'}</div>
+                <div style="font-weight: 600; margin-bottom: 5px;">${comp.name}</div>
+                <div style="font-size: 12px; color: ${isHealthy ? '#10b981' : '#ef4444'}; text-transform: uppercase; font-weight: 600;">${comp.status}</div>
+                ${comp.uptime ? `<div style="font-size: 11px; color: #8492a6; margin-top: 5px;">Uptime: ${comp.uptime}</div>` : ''}
+                ${comp.latency ? `<div style="font-size: 11px; color: #8492a6; margin-top: 5px;">Latency: ${comp.latency}</div>` : ''}
+                ${comp.writes ? `<div style="font-size: 11px; color: #8492a6; margin-top: 5px;">${comp.writes}</div>` : ''}
+                ${comp.metrics ? `<div style="font-size: 11px; color: #8492a6; margin-top: 5px;">${comp.metrics} metrics</div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Display drift checks
+        const driftChecks = document.getElementById('drift-checks');
+        const drifts = [
+          { env: 'staging', component: 'Database Schema', status: 'in-sync', lastCheck: new Date().toISOString() },
+          { env: 'production', component: 'Environment Variables', status: 'drift-detected', lastCheck: new Date().toISOString(), details: '2 variables differ' },
+          { env: 'production', component: 'Package Versions', status: 'in-sync', lastCheck: new Date().toISOString() }
+        ];
+
+        driftChecks.innerHTML = drifts.map(drift => {
+          const hasDrift = drift.status === 'drift-detected';
+          return `
+            <div class="deployment-card" style="margin-bottom: 15px; border-left: 4px solid ${hasDrift ? '#f59e0b' : '#10b981'};">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 600; margin-bottom: 5px;">${hasDrift ? '⚠️' : '✅'} ${drift.env.toUpperCase()}: ${drift.component}</div>
+                  <div style="font-size: 12px; color: #8492a6;">
+                    Status: <span style="color: ${hasDrift ? '#f59e0b' : '#10b981'}; font-weight: 600;">${drift.status}</span>
+                    ${drift.details ? ` - ${drift.details}` : ''}
+                  </div>
+                  <div style="font-size: 11px; color: #8492a6; margin-top: 3px;">Last checked: ${new Date(drift.lastCheck).toLocaleString()}</div>
+                </div>
+                <button class="btn btn-secondary" onclick="runDriftCheck('${drift.env}', '${drift.component}')" style="padding: 8px 16px; font-size: 14px;">🔍 Check Now</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Display rollback status
+        const rollbackStatus = document.getElementById('rollback-status');
+        const rollbacks = []; // No recent rollbacks in mock data
+
+        if (rollbacks.length === 0) {
+          rollbackStatus.innerHTML = '<div class="empty-state"><div class="empty-state-icon">↩️</div><div class="empty-state-text">No recent rollbacks</div><p>All deployments are stable</p></div>';
+        } else {
+          rollbackStatus.innerHTML = rollbacks.map(rollback => `
+            <div class="deployment-card" style="margin-bottom: 15px;">
+              <div style="font-weight: 600; margin-bottom: 5px;">↩️ Rollback: ${rollback.from} → ${rollback.to}</div>
+              <div style="font-size: 12px; color: #8492a6;">
+                Environment: ${rollback.env} | Time: ${new Date(rollback.timestamp).toLocaleString()}
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Failed to load health status:', error);
+      }
+    }
+
+    async function runDriftCheck(env, component) {
+      alert(`Running drift check for ${component} in ${env}...`);
+      await loadHealthStatus();
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check for auth token
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login first');
+        window.location.href = '/';
+      }
+
+      loadDeployments();
+      loadPipelineStatus();
+      loadArtifacts();
+      loadHealthStatus();
+
+      // Auto-refresh every 30 seconds
+      setInterval(() => {
+        const activeTab = document.querySelector('.tab.active').textContent.toLowerCase();
+        if (activeTab.includes('pipeline')) loadPipelineStatus();
+        if (activeTab.includes('health')) loadHealthStatus();
+      }, 30000);
+    });
+  </script>
+</body>
+</html>

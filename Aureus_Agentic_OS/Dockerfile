@@ -1,20 +1,53 @@
-FROM python:3.11-slim
+# Aureus Agentic OS - Console Application Docker Image
+# Multi-stage build for production deployment
+
+# Stage 1: Build all packages
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy package files
+COPY package.json package-lock.json ./
+COPY packages/*/package.json ./packages/
 
-# Copy application
-COPY app.py .
+# Install all dependencies
+RUN npm ci --ignore-scripts
 
-# Expose port
-EXPOSE 5000
+# Copy source code
+COPY . .
 
-# Health check
+# Build all workspaces in order
+RUN npm run build:ordered
+
+# Build console app
+RUN npm run build --workspace=@aureus/console
+
+# Stage 2: Production runtime
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install production dependencies only
+COPY package.json package-lock.json ./
+COPY packages/*/package.json ./packages/
+RUN npm ci --only=production --ignore-scripts
+
+# Copy built artifacts from builder
+COPY --from=builder /app/packages/*/dist ./packages/
+COPY --from=builder /app/apps/console/dist ./apps/console/dist
+COPY --from=builder /app/apps/console/package.json ./apps/console/
+
+# Create necessary directories
+RUN mkdir -p /app/data /app/logs /app/var/run /app/config
+
+# Set environment
+ENV NODE_ENV=production
+ENV PORT=3000
+
+EXPOSE 3000
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:5000/health')"
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); })"
 
-# Run with gunicorn in production, flask in development
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "app:app"]
+# Start console
+CMD ["node", "apps/console/dist/index.js"]

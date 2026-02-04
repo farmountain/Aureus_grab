@@ -1,0 +1,186 @@
+name: Deploy Console App
+
+on:
+  push:
+    branches:
+      - main
+      - production
+    paths:
+      - 'apps/console/**'
+      - 'packages/**'
+      - '.github/workflows/deploy-console.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version to deploy (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+  deployments: write
+
+jobs:
+  build:
+    name: Build Console App
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages in order
+        run: |
+          # Build in dependency order
+          npm run build --workspace=@aureus/observability
+          npm run build --workspace=@aureus/world-model
+          npm run build --workspace=@aureus/policy
+          npm run build --workspace=@aureus/memory-hipcortex
+          npm run build --workspace=@aureus/crv
+          npm run build --workspace=@aureus/hypothesis
+          npm run build --workspace=@aureus/kernel
+          npm run build --workspace=@aureus/tools
+          npm run build --workspace=@aureus/perception
+          npm run build --workspace=@aureus/reflexion
+          npm run build --workspace=@aureus/benchright
+          npm run build --workspace=@aureus/evaluation-harness
+          npm run build --workspace=@aureus/robotics
+          npm run build --workspace=@aureus/sdk
+
+      - name: Build console app
+        run: npm run build --workspace=@aureus/console
+
+      - name: Run tests
+        run: npm run test --workspace=@aureus/console
+        continue-on-error: true
+
+      - name: Create deployment artifact
+        run: |
+          mkdir -p deploy-artifact
+          cp -r apps/console/dist deploy-artifact/
+          cp -r apps/console/src/ui deploy-artifact/ui
+          cp apps/console/package.json deploy-artifact/
+          cp apps/console/.env.example deploy-artifact/.env.example
+          tar -czf console-app.tar.gz -C deploy-artifact .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: console-app-${{ github.sha }}
+          path: console-app.tar.gz
+          retention-days: 30
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment:
+      name: staging
+      url: https://staging.aureus.example.com
+    
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: console-app-${{ github.sha }}
+
+      - name: Extract artifact
+        run: |
+          mkdir -p deploy
+          tar -xzf console-app.tar.gz -C deploy
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging environment..."
+          echo "Deployment commands would go here (e.g., scp, rsync, kubectl, etc.)"
+          echo "Example: rsync -avz deploy/ user@staging-server:/opt/aureus/console/"
+          echo "Example: kubectl apply -f k8s/staging/"
+          
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests against staging..."
+          echo "Example: curl https://staging.aureus.example.com/health"
+          echo "Example: npm run test:e2e --workspace=@aureus/console -- --env=staging"
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "Staging deployment completed: ${{ job.status }}"
+          echo "Version: ${{ github.sha }}"
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, deploy-staging]
+    if: github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    environment:
+      name: production
+      url: https://aureus.example.com
+    
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: console-app-${{ github.sha }}
+
+      - name: Extract artifact
+        run: |
+          mkdir -p deploy
+          tar -xzf console-app.tar.gz -C deploy
+
+      - name: Create backup
+        run: |
+          echo "Creating backup of current production deployment..."
+          echo "Example: ssh user@prod-server 'tar -czf /backups/console-$(date +%Y%m%d-%H%M%S).tar.gz /opt/aureus/console/'"
+
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production environment..."
+          echo "Deployment commands would go here (e.g., scp, rsync, kubectl, etc.)"
+          echo "Example: rsync -avz deploy/ user@prod-server:/opt/aureus/console/"
+          echo "Example: kubectl apply -f k8s/production/"
+          
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests against production..."
+          echo "Example: curl https://aureus.example.com/health"
+          echo "Example: npm run test:e2e --workspace=@aureus/console -- --env=production"
+
+      - name: Monitor deployment
+        run: |
+          echo "Monitoring deployment metrics..."
+          echo "Example: Check error rates, response times, resource usage"
+          sleep 10
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "Production deployment completed: ${{ job.status }}"
+          echo "Version: ${{ github.event.inputs.version || github.sha }}"
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed! Rolling back..."
+          echo "Example: ssh user@prod-server 'cd /opt/aureus/console && git checkout HEAD~1'"
+          echo "Example: kubectl rollout undo deployment/console-app"

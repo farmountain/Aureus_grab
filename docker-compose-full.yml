@@ -137,13 +137,13 @@ services:
       start_period: 40s
     restart: unless-stopped
 
-  # Aureus Agentic OS (Policy Engine)
+  # Aureus OS (Policy Engine) - Built from real source
   aureus-os:
     build:
       context: ./Aureus_Agentic_OS
       dockerfile: Dockerfile
-    image: aureus/agentic-os:latest
-    container_name: aureus-os
+    image: aureus/console:latest
+    container_name: aureus-console
     depends_on:
       postgres:
         condition: service_healthy
@@ -197,9 +197,12 @@ services:
       start_period: 40s
     restart: unless-stopped
 
-  # OpenClaw (Multi-Channel Platform)
+  # OpenClaw (Multi-Channel Platform) - Built from real source
   openclaw:
-    image: openclaw/platform:latest  # Replace with actual image
+    build:
+      context: ./openclaw
+      dockerfile: Dockerfile
+    image: openclaw/platform:latest
     container_name: openclaw
     depends_on:
       postgres:

@@ -1,0 +1,244 @@
+# GitLab CI/CD Pipeline for Aureus Agentic OS
+# Production deployment pipeline with verification and rollback
+
+stages:
+  - verify
+  - build
+  - deploy-staging
+  - deploy-production
+  - rollback
+
+variables:
+  NODE_VERSION: "18"
+  DEPLOY_PATH: "/opt/aureus"
+  SERVICE_NAME: "aureus-console"
+
+# Pre-deployment verification
+verify:
+  stage: verify
+  image: node:18
+  before_script:
+    - npm ci
+  script:
+    - npm run build:ordered
+    - chmod +x ops/verification/pre-deployment.sh
+    - ENVIRONMENT=${CI_ENVIRONMENT_NAME:-staging} VERSION=${CI_COMMIT_TAG:-${CI_COMMIT_SHORT_SHA}} ./ops/verification/pre-deployment.sh
+  artifacts:
+    paths:
+      - apps/console/dist/
+      - apps/console/src/ui/
+      - packages/*/dist/
+    expire_in: 30 days
+  only:
+    - main
+    - production
+    - tags
+
+# Build and package
+build:
+  stage: build
+  image: node:18
+  dependencies:
+    - verify
+  script:
+    - VERSION=${CI_COMMIT_TAG:-${CI_COMMIT_SHORT_SHA}}
+    - mkdir -p deploy-package
+    - cp -r apps/console/dist deploy-package/
+    - cp -r apps/console/src/ui deploy-package/ui
+    - cp apps/console/package.json deploy-package/
+    - echo "$VERSION" > deploy-package/VERSION
+    - tar -czf console-app-${VERSION}.tar.gz -C deploy-package .
+  artifacts:
+    paths:
+      - console-app-*.tar.gz
+    expire_in: 90 days
+  only:
+    - main
+    - production
+    - tags
+
+# Deploy to staging
+deploy:staging:
+  stage: deploy-staging
+  image: alpine:latest
+  environment:
+    name: staging
+    url: https://staging.aureus.example.com
+  dependencies:
+    - build
+  before_script:
+    - apk add --no-cache openssh-client curl bash
+    - eval $(ssh-agent -s)
+    - echo "$STAGING_SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $STAGING_HOST >> ~/.ssh/known_hosts
+  script:
+    # Copy package to staging
+    - scp console-app-*.tar.gz $STAGING_USER@$STAGING_HOST:/tmp/
+    
+    # Deploy on staging server
+    - |
+      ssh $STAGING_USER@$STAGING_HOST << 'ENDSSH'
+      # Stop service
+      sudo systemctl stop $SERVICE_NAME || true
+      
+      # Backup current version
+      sudo cp -r $DEPLOY_PATH/apps/console $DEPLOY_PATH/apps/console.backup || true
+      
+      # Extract new version
+      sudo tar -xzf /tmp/console-app-*.tar.gz -C $DEPLOY_PATH/apps/console/
+      
+      # Start service
+      sudo systemctl start $SERVICE_NAME
+      
+      # Cleanup
+      rm /tmp/console-app-*.tar.gz
+      ENDSSH
+    
+    # Wait for service
+    - sleep 30
+    
+    # Post-deployment verification
+    - chmod +x ops/verification/post-deployment.sh
+    - CONSOLE_URL=https://staging.aureus.example.com ENVIRONMENT=staging VERSION=${CI_COMMIT_TAG:-${CI_COMMIT_SHORT_SHA}} ./ops/verification/post-deployment.sh
+    
+    # Health checks
+    - chmod +x ops/health-checks/console-health.sh
+    - CONSOLE_URL=https://staging.aureus.example.com ./ops/health-checks/console-health.sh
+  only:
+    - main
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+
+# Deploy to production
+deploy:production:
+  stage: deploy-production
+  image: alpine:latest
+  environment:
+    name: production
+    url: https://aureus.example.com
+  dependencies:
+    - build
+  before_script:
+    - apk add --no-cache openssh-client curl bash
+    - eval $(ssh-agent -s)
+    - echo "$PRODUCTION_SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - IFS=',' read -ra HOSTS <<< "$PRODUCTION_HOSTS"
+    - for host in "${HOSTS[@]}"; do ssh-keyscan $host >> ~/.ssh/known_hosts; done
+  script:
+    # Deploy to all production hosts
+    - |
+      IFS=',' read -ra HOSTS <<< "$PRODUCTION_HOSTS"
+      for host in "${HOSTS[@]}"; do
+        echo "Deploying to $host..."
+        
+        # Copy package
+        scp console-app-*.tar.gz $PRODUCTION_USER@$host:/tmp/
+        
+        # Deploy on server
+        ssh $PRODUCTION_USER@$host << 'ENDSSH'
+        # Backup current version
+        sudo cp -r $DEPLOY_PATH/apps/console $DEPLOY_PATH/apps/console.backup.$(date +%Y%m%d-%H%M%S)
+        
+        # Stop service
+        sudo systemctl stop $SERVICE_NAME
+        
+        # Extract new version
+        sudo tar -xzf /tmp/console-app-*.tar.gz -C $DEPLOY_PATH/apps/console/
+        
+        # Start service
+        sudo systemctl start $SERVICE_NAME
+        
+        # Wait for startup
+        sleep 10
+        
+        # Cleanup
+        rm /tmp/console-app-*.tar.gz
+        ENDSSH
+        
+        echo "Deployed to $host"
+      done
+    
+    # Wait for all services
+    - sleep 60
+    
+    # Post-deployment verification
+    - chmod +x ops/verification/post-deployment.sh
+    - CONSOLE_URL=https://aureus.example.com ENVIRONMENT=production VERSION=${CI_COMMIT_TAG:-${CI_COMMIT_SHORT_SHA}} ./ops/verification/post-deployment.sh
+    
+    # Health checks on all nodes
+    - |
+      IFS=',' read -ra HOSTS <<< "$PRODUCTION_HOSTS"
+      for host in "${HOSTS[@]}"; do
+        echo "Health check for $host..."
+        CONSOLE_URL=https://${host} ./ops/health-checks/console-health.sh
+      done
+  only:
+    - production
+    - tags
+  when: manual  # Require manual approval for production
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+
+# Automated rollback on failure
+rollback:production:
+  stage: rollback
+  image: alpine:latest
+  environment:
+    name: production
+  dependencies: []
+  before_script:
+    - apk add --no-cache openssh-client bash
+    - eval $(ssh-agent -s)
+    - echo "$PRODUCTION_SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - IFS=',' read -ra HOSTS <<< "$PRODUCTION_HOSTS"
+    - for host in "${HOSTS[@]}"; do ssh-keyscan $host >> ~/.ssh/known_hosts; done
+  script:
+    - echo "Rolling back production deployment..."
+    - |
+      IFS=',' read -ra HOSTS <<< "$PRODUCTION_HOSTS"
+      for host in "${HOSTS[@]}"; do
+        echo "Rolling back $host..."
+        ssh $PRODUCTION_USER@$host << 'ENDSSH'
+        # Stop service
+        sudo systemctl stop $SERVICE_NAME
+        
+        # Restore backup
+        BACKUP=$(ls -t $DEPLOY_PATH/apps/console.backup.* | head -n1)
+        if [ -n "$BACKUP" ]; then
+          sudo rm -rf $DEPLOY_PATH/apps/console
+          sudo cp -r "$BACKUP" $DEPLOY_PATH/apps/console
+        fi
+        
+        # Start service
+        sudo systemctl start $SERVICE_NAME
+        ENDSSH
+      done
+    
+    # Verify rollback
+    - sleep 30
+    - chmod +x ops/verification/post-deployment.sh
+    - CONSOLE_URL=https://aureus.example.com ./ops/verification/post-deployment.sh || echo "Rollback verification failed"
+  when: on_failure
+  only:
+    - production
+    - tags
+
+# Notification job (optional - requires setup)
+.notify:
+  script:
+    - |
+      curl -X POST -H 'Content-type: application/json' \
+        --data "{\"text\":\"Pipeline ${CI_PIPELINE_STATUS}: ${CI_COMMIT_TITLE}\"}" \
+        $SLACK_WEBHOOK_URL || true
+  when: always

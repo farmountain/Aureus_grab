@@ -1,0 +1,42 @@
+id: basic-workflow
+name: Basic Three-Task Workflow
+tasks:
+  - id: initialize
+    name: Initialize Resources
+    type: action
+    retry:
+      maxAttempts: 3
+      backoffMs: 1000
+      backoffMultiplier: 2
+      jitter: true
+    timeoutMs: 5000
+    riskTier: LOW
+
+  - id: process
+    name: Process Data
+    type: action
+    retry:
+      maxAttempts: 2
+      backoffMs: 500
+    timeoutMs: 3000
+    riskTier: MEDIUM
+    compensation:
+      onFailure: cleanup-process
+      onTimeout: cleanup-process
+
+  - id: finalize
+    name: Finalize and Commit
+    type: action
+    idempotencyKey: finalize-key
+    riskTier: HIGH
+
+  - id: cleanup-process
+    name: Cleanup Process Resources
+    type: action
+    riskTier: LOW
+
+dependencies:
+  process:
+    - initialize
+  finalize:
+    - process

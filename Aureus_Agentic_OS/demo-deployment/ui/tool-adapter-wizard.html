@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tool Adapter Wizard - Aureus Console</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+
+    .section h2 {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #333;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #555;
+    }
+
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .properties-list {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 15px;
+      background: #f9f9f9;
+      margin-top: 10px;
+    }
+
+    .property-item {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding: 10px;
+      background: white;
+      border-radius: 4px;
+      border: 1px solid #e0e0e0;
+      align-items: center;
+    }
+
+    .property-item input {
+      flex: 1;
+    }
+
+    .property-item select {
+      flex: 0.5;
+    }
+
+    .property-item button {
+      padding: 6px 12px;
+      background: #ef4444;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .property-item button:hover {
+      background: #dc2626;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .result-section {
+      display: none;
+      margin-top: 30px;
+      padding: 20px;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+    }
+
+    .result-section.show {
+      display: block;
+    }
+
+    .result-section h3 {
+      color: #065f46;
+      margin-bottom: 15px;
+    }
+
+    .code-block {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .file-header {
+      font-weight: bold;
+      color: #94a3b8;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #475569;
+    }
+
+    .next-steps {
+      background: #eff6ff;
+      border: 1px solid #93c5fd;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .next-steps h4 {
+      color: #1e40af;
+      margin-bottom: 10px;
+    }
+
+    .next-steps ol {
+      padding-left: 20px;
+      color: #1e3a8a;
+    }
+
+    .next-steps li {
+      margin: 5px 0;
+    }
+
+    .error-message {
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .info-text {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🛠️ Tool Adapter Wizard</h1>
+      <p>Create production-grade tool adapters with schema validation, policy integration, and CRV validation</p>
+    </div>
+
+    <div class="content">
+      <form id="wizardForm">
+        <!-- Basic Information -->
+        <div class="section">
+          <h2>Basic Information</h2>
+          
+          <div class="form-group">
+            <label for="toolName">Tool Name *</label>
+            <input type="text" id="toolName" name="toolName" placeholder="e.g., Database Query, API Request" required>
+            <div class="info-text">Human-readable name for the tool</div>
+          </div>
+
+          <div class="form-group">
+            <label for="toolDescription">Description *</label>
+            <textarea id="toolDescription" name="toolDescription" placeholder="What does this tool do?" required></textarea>
+          </div>
+        </div>
+
+        <!-- Input Properties -->
+        <div class="section">
+          <h2>Input Properties</h2>
+          <div class="properties-list" id="inputProperties">
+            <div class="info-text" style="margin-bottom: 10px;">Define the parameters that this tool accepts</div>
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="addProperty('input')">+ Add Input Property</button>
+        </div>
+
+        <!-- Output Properties -->
+        <div class="section">
+          <h2>Output Properties</h2>
+          <div class="properties-list" id="outputProperties">
+            <div class="info-text" style="margin-bottom: 10px;">Define the structure of the tool's return value</div>
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="addProperty('output')">+ Add Output Property</button>
+        </div>
+
+        <!-- Tool Configuration -->
+        <div class="section">
+          <h2>Tool Configuration</h2>
+          
+          <div class="form-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="sideEffect" name="sideEffect" onchange="toggleSideEffectOptions()">
+              <label for="sideEffect" style="margin-bottom: 0;">This tool has side effects (write, delete, execute)</label>
+            </div>
+          </div>
+
+          <div class="form-group hidden" id="idempotencyGroup">
+            <label for="idempotencyStrategy">Idempotency Strategy</label>
+            <select id="idempotencyStrategy" name="idempotencyStrategy">
+              <option value="CACHE_REPLAY">CACHE_REPLAY - Cache and replay results</option>
+              <option value="NATURAL">NATURAL - Naturally idempotent, safe to re-execute</option>
+              <option value="REQUEST_ID">REQUEST_ID - Use unique request ID</option>
+              <option value="NONE">NONE - No idempotency guarantee</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="riskTier">Risk Tier</label>
+            <select id="riskTier" name="riskTier">
+              <option value="LOW">LOW - Safe read operations</option>
+              <option value="MEDIUM">MEDIUM - Moderate risk operations</option>
+              <option value="HIGH">HIGH - Sensitive operations</option>
+              <option value="CRITICAL">CRITICAL - Critical system operations</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="intent">Intent</label>
+            <select id="intent" name="intent">
+              <option value="READ">READ - Read data</option>
+              <option value="WRITE">WRITE - Write data</option>
+              <option value="DELETE">DELETE - Delete data</option>
+              <option value="EXECUTE">EXECUTE - Execute operation</option>
+              <option value="ADMIN">ADMIN - Administrative operation</option>
+            </select>
+          </div>
+
+          <div class="form-group hidden" id="compensationGroup">
+            <div class="checkbox-group">
+              <input type="checkbox" id="hasCompensation" name="hasCompensation" onchange="toggleCompensationDescription()">
+              <label for="hasCompensation" style="margin-bottom: 0;">This tool supports compensation/rollback</label>
+            </div>
+          </div>
+
+          <div class="form-group hidden" id="compensationDescGroup">
+            <label for="compensationDescription">Compensation Description</label>
+            <input type="text" id="compensationDescription" name="compensationDescription" placeholder="e.g., Restore original file content">
+          </div>
+        </div>
+
+        <!-- Generate Button -->
+        <div class="btn-group">
+          <button type="submit" class="btn btn-success">🚀 Generate Tool Adapter</button>
+          <button type="button" class="btn btn-secondary" onclick="resetForm()">Reset</button>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+      </form>
+
+      <!-- Results Section -->
+      <div class="result-section" id="resultSection">
+        <h3>✅ Tool Adapter Generated Successfully!</h3>
+        
+        <div id="generatedFiles"></div>
+        
+        <div class="next-steps">
+          <h4>📋 Next Steps:</h4>
+          <ol id="nextStepsList"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let inputPropertyCount = 0;
+    let outputPropertyCount = 0;
+
+    function addProperty(type) {
+      const container = document.getElementById(`${type}Properties`);
+      const count = type === 'input' ? ++inputPropertyCount : ++outputPropertyCount;
+      
+      const propertyItem = document.createElement('div');
+      propertyItem.className = 'property-item';
+      propertyItem.innerHTML = `
+        <input type="text" placeholder="Property name" name="${type}PropName[]" required>
+        <select name="${type}PropType[]">
+          <option value="string">string</option>
+          <option value="number">number</option>
+          <option value="boolean">boolean</option>
+          <option value="array">array</option>
+          <option value="object">object</option>
+        </select>
+        <input type="text" placeholder="Description (optional)" name="${type}PropDesc[]">
+        <label style="display: flex; align-items: center; gap: 5px; margin: 0;">
+          <input type="checkbox" name="${type}PropRequired[]" checked>
+          Required
+        </label>
+        <button type="button" onclick="this.parentElement.remove()">Remove</button>
+      `;
+      
+      container.appendChild(propertyItem);
+    }
+
+    function toggleSideEffectOptions() {
+      const sideEffect = document.getElementById('sideEffect').checked;
+      document.getElementById('idempotencyGroup').classList.toggle('hidden', !sideEffect);
+      document.getElementById('compensationGroup').classList.toggle('hidden', !sideEffect);
+      
+      if (!sideEffect) {
+        document.getElementById('hasCompensation').checked = false;
+        toggleCompensationDescription();
+      }
+    }
+
+    function toggleCompensationDescription() {
+      const hasCompensation = document.getElementById('hasCompensation').checked;
+      document.getElementById('compensationDescGroup').classList.toggle('hidden', !hasCompensation);
+    }
+
+    function resetForm() {
+      document.getElementById('wizardForm').reset();
+      document.getElementById('inputProperties').innerHTML = '<div class="info-text" style="margin-bottom: 10px;">Define the parameters that this tool accepts</div>';
+      document.getElementById('outputProperties').innerHTML = '<div class="info-text" style="margin-bottom: 10px;">Define the structure of the tool\'s return value</div>';
+      document.getElementById('resultSection').classList.remove('show');
+      document.getElementById('errorMessage').classList.remove('show');
+      inputPropertyCount = 0;
+      outputPropertyCount = 0;
+      toggleSideEffectOptions();
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.classList.add('show');
+    }
+
+    function hideError() {
+      document.getElementById('errorMessage').classList.remove('show');
+    }
+
+    document.getElementById('wizardForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+
+      const formData = new FormData(e.target);
+      
+      // Parse input properties
+      const inputPropNames = formData.getAll('inputPropName[]');
+      const inputPropTypes = formData.getAll('inputPropType[]');
+      const inputPropDescs = formData.getAll('inputPropDesc[]');
+      const inputPropRequired = formData.getAll('inputPropRequired[]');
+      
+      const inputProperties = inputPropNames.map((name, i) => ({
+        name,
+        type: inputPropTypes[i],
+        description: inputPropDescs[i] || undefined,
+        required: inputPropRequired[i] === 'on'
+      }));
+
+      // Parse output properties
+      const outputPropNames = formData.getAll('outputPropName[]');
+      const outputPropTypes = formData.getAll('outputPropType[]');
+      const outputPropDescs = formData.getAll('outputPropDesc[]');
+      const outputPropRequired = formData.getAll('outputPropRequired[]');
+      
+      const outputProperties = outputPropNames.map((name, i) => ({
+        name,
+        type: outputPropTypes[i],
+        description: outputPropDescs[i] || undefined,
+        required: outputPropRequired[i] === 'on'
+      }));
+
+      const requestData = {
+        name: formData.get('toolName'),
+        description: formData.get('toolDescription'),
+        inputProperties,
+        outputProperties,
+        sideEffect: formData.get('sideEffect') === 'on',
+        idempotencyStrategy: formData.get('idempotencyStrategy'),
+        riskTier: formData.get('riskTier'),
+        intent: formData.get('intent'),
+        hasCompensation: formData.get('hasCompensation') === 'on',
+        compensationDescription: formData.get('compensationDescription') || undefined
+      };
+
+      try {
+        // Get auth token from localStorage
+        const token = localStorage.getItem('authToken');
+        
+        if (!token) {
+          showError('Authentication required. Please log in first.');
+          return;
+        }
+        
+        const response = await fetch('/api/tool-adapters/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(requestData)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to generate tool adapter');
+        }
+
+        const result = await response.json();
+        displayResults(result);
+      } catch (error) {
+        showError(error.message);
+      }
+    });
+
+    function displayResults(result) {
+      const filesDiv = document.getElementById('generatedFiles');
+      filesDiv.innerHTML = '';
+
+      // Display each generated file
+      Object.entries(result.files).forEach(([type, file]) => {
+        const fileBlock = document.createElement('div');
+        fileBlock.innerHTML = `
+          <div class="code-block">
+            <div class="file-header">${file.path}</div>
+            <pre>${escapeHtml(file.content)}</pre>
+          </div>
+        `;
+        filesDiv.appendChild(fileBlock);
+      });
+
+      // Display next steps
+      const stepsList = document.getElementById('nextStepsList');
+      stepsList.innerHTML = result.nextSteps.map(step => `<li>${step}</li>`).join('');
+
+      // Show results section
+      document.getElementById('resultSection').classList.add('show');
+      
+      // Scroll to results
+      document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initialize form
+    toggleSideEffectOptions();
+  </script>
+</body>
+</html>

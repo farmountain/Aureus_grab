@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workflow DAG Studio - Aureus Console</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f7fa;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .studio-container {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 300px;
+      background: white;
+      border-right: 1px solid #e1e8ed;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .sidebar-header h1 {
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+
+    .sidebar-header p {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .task-palette {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .palette-section {
+      margin-bottom: 20px;
+    }
+
+    .palette-section h3 {
+      font-size: 14px;
+      color: #8492a6;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .task-template {
+      background: white;
+      border: 2px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      cursor: grab;
+      transition: all 0.2s;
+    }
+
+    .task-template:hover {
+      border-color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .task-template:active {
+      cursor: grabbing;
+    }
+
+    .task-template-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .task-template-desc {
+      font-size: 12px;
+      color: #8492a6;
+    }
+
+    .sidebar-actions {
+      padding: 20px;
+      border-top: 1px solid #e1e8ed;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: white;
+      border: 2px solid #e1e8ed;
+      color: #3c4858;
+    }
+
+    .btn-secondary:hover {
+      border-color: #667eea;
+      color: #667eea;
+    }
+
+    /* Main Canvas Area */
+    .canvas-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .canvas-toolbar {
+      background: white;
+      border-bottom: 1px solid #e1e8ed;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .workflow-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #3c4858;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .toolbar-btn {
+      padding: 8px 16px;
+      border: 1px solid #e1e8ed;
+      border-radius: 6px;
+      background: white;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toolbar-btn:hover {
+      background: #f5f7fa;
+      border-color: #667eea;
+    }
+
+    .canvas {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background-image: 
+        linear-gradient(rgba(102, 126, 234, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(102, 126, 234, 0.05) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    .canvas-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Task Nodes */
+    .task-node {
+      position: absolute;
+      width: 180px;
+      background: white;
+      border: 2px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: move;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s;
+    }
+
+    .task-node:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .task-node.selected {
+      border-color: #667eea;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    }
+
+    .task-node.risk-low { border-left: 4px solid #10b981; }
+    .task-node.risk-medium { border-left: 4px solid #f59e0b; }
+    .task-node.risk-high { border-left: 4px solid #ef4444; }
+    .task-node.risk-critical { border-left: 4px solid #991b1b; }
+
+    .task-node-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .task-node-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #3c4858;
+      flex: 1;
+      word-break: break-word;
+    }
+
+    .task-node-type {
+      font-size: 11px;
+      background: #f5f7fa;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #8492a6;
+    }
+
+    .task-node-badges {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .badge-policy { background: #dbeafe; color: #1e40af; }
+    .badge-crv { background: #dcfce7; color: #166534; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-error { background: #fee2e2; color: #991b1b; }
+
+    .task-node-connections {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+
+    .connection-point {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #e1e8ed;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .connection-point:hover {
+      background: #667eea;
+      transform: scale(1.3);
+    }
+
+    .connection-point.input {
+      margin-left: -18px;
+    }
+
+    .connection-point.output {
+      margin-right: -18px;
+    }
+
+    /* SVG for edges */
+    .edges-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .edge {
+      stroke: #8492a6;
+      stroke-width: 2;
+      fill: none;
+      marker-end: url(#arrowhead);
+    }
+
+    .edge.selected {
+      stroke: #667eea;
+      stroke-width: 3;
+    }
+
+    /* Inspector Panel */
+    .inspector-panel {
+      width: 350px;
+      background: white;
+      border-left: 1px solid #e1e8ed;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
+      overflow-y: auto;
+    }
+
+    .inspector-panel.hidden {
+      display: none;
+    }
+
+    .inspector-header {
+      padding: 20px;
+      border-bottom: 1px solid #e1e8ed;
+    }
+
+    .inspector-header h2 {
+      font-size: 16px;
+      color: #3c4858;
+      margin-bottom: 5px;
+    }
+
+    .inspector-subtitle {
+      font-size: 13px;
+      color: #8492a6;
+    }
+
+    .inspector-content {
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #3c4858;
+      margin-bottom: 8px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #e1e8ed;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .form-checkbox input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .form-checkbox label {
+      font-size: 13px;
+      color: #3c4858;
+      cursor: pointer;
+    }
+
+    .validation-status {
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .validation-status.success {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+
+    .validation-status.warning {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde047;
+    }
+
+    .validation-status.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #e1e8ed;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #3c4858;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #8492a6;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: #f5f7fa;
+      color: #3c4858;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .validation-item {
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border-left: 4px solid;
+    }
+
+    .validation-item.error {
+      background: #fee2e2;
+      border-color: #991b1b;
+    }
+
+    .validation-item.warning {
+      background: #fef3c7;
+      border-color: #92400e;
+    }
+
+    .validation-item-title {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .validation-item-message {
+      font-size: 12px;
+      color: #3c4858;
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: white;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      min-width: 300px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .toast.success { border-left: 4px solid #10b981; }
+    .toast.error { border-left: 4px solid #ef4444; }
+    .toast.warning { border-left: 4px solid #f59e0b; }
+    .toast.info { border-left: 4px solid #3b82f6; }
+
+    .toast-message {
+      flex: 1;
+      font-size: 14px;
+      color: #3c4858;
+    }
+  </style>
+</head>
+<body>
+  <div class="studio-container">
+    <!-- Left Sidebar: Task Palette -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h1>DAG Studio</h1>
+        <p>Drag tasks to compose your workflow</p>
+      </div>
+      
+      <div class="task-palette">
+        <div class="palette-section">
+          <h3>Task Types</h3>
+          <div class="task-template" draggable="true" data-task-type="action">
+            <div class="task-template-title">Action Task</div>
+            <div class="task-template-desc">Execute a single operation</div>
+          </div>
+          <div class="task-template" draggable="true" data-task-type="decision">
+            <div class="task-template-title">Decision Task</div>
+            <div class="task-template-desc">Conditional branching logic</div>
+          </div>
+          <div class="task-template" draggable="true" data-task-type="parallel">
+            <div class="task-template-title">Parallel Task</div>
+            <div class="task-template-desc">Execute multiple tasks concurrently</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-actions">
+        <button class="btn btn-primary" onclick="validateWorkflow()">Validate Workflow</button>
+        <button class="btn btn-secondary" onclick="exportWorkflow()">Export Spec</button>
+        <button class="btn btn-secondary" onclick="importWorkflow()">Import Spec</button>
+      </div>
+    </div>
+
+    <!-- Main Canvas -->
+    <div class="canvas-area">
+      <div class="canvas-toolbar">
+        <div class="workflow-title">
+          <span id="workflowName">Untitled Workflow</span>
+        </div>
+        <div class="toolbar-actions">
+          <button class="toolbar-btn" onclick="clearCanvas()">Clear Canvas</button>
+          <button class="toolbar-btn" onclick="autoLayout()">Auto Layout</button>
+          <button class="toolbar-btn" onclick="toggleInspector()">Toggle Inspector</button>
+        </div>
+      </div>
+
+      <div class="canvas" id="canvas">
+        <svg class="edges-layer" id="edgesLayer">
+          <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+              <polygon points="0 0, 10 3, 0 6" fill="#8492a6" />
+            </marker>
+          </defs>
+        </svg>
+        <div class="canvas-content" id="canvasContent"></div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar: Inspector Panel -->
+    <div class="inspector-panel" id="inspectorPanel">
+      <div class="inspector-header">
+        <h2 id="inspectorTitle">Task Inspector</h2>
+        <p class="inspector-subtitle">Configure task properties</p>
+      </div>
+      
+      <div class="inspector-content" id="inspectorContent">
+        <p style="color: #8492a6; text-align: center; padding: 40px 20px;">
+          Select a task to configure its properties
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Validation Modal -->
+  <div class="modal-overlay" id="validationModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Validation Results</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="validationResults"></div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // State
+    let tasks = [];
+    let edges = [];
+    let selectedTask = null;
+    let draggedElement = null;
+    let isDraggingNode = false;
+    let dragOffset = { x: 0, y: 0 };
+    let isConnecting = false;
+    let connectionStart = null;
+    let nextTaskId = 1;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      setupDragAndDrop();
+      setupCanvasInteractions();
+    });
+
+    // Drag and drop from palette
+    function setupDragAndDrop() {
+      const templates = document.querySelectorAll('.task-template');
+      const canvas = document.getElementById('canvas');
+
+      templates.forEach(template => {
+        template.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('taskType', template.dataset.taskType);
+        });
+      });
+
+      canvas.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+
+      canvas.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const taskType = e.dataTransfer.getData('taskType');
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        addTask(taskType, x, y);
+      });
+    }
+
+    // Add task to canvas
+    function addTask(type, x, y) {
+      const task = {
+        id: `task-${nextTaskId++}`,
+        name: `${type}-${nextTaskId - 1}`,
+        type: type,
+        x: x,
+        y: y,
+        riskTier: 'LOW',
+        retry: { maxAttempts: 3, backoffMs: 1000 },
+        timeoutMs: 30000,
+        idempotencyKey: '',
+        compensation: null,
+        requiredPermissions: [],
+        crvRules: [],
+      };
+
+      tasks.push(task);
+      renderTask(task);
+      showToast('Task added successfully', 'success');
+    }
+
+    // Render task node
+    function renderTask(task) {
+      const canvasContent = document.getElementById('canvasContent');
+      const node = document.createElement('div');
+      node.className = `task-node risk-${task.riskTier.toLowerCase()}`;
+      node.id = task.id;
+      node.style.left = `${task.x}px`;
+      node.style.top = `${task.y}px`;
+
+      node.innerHTML = `
+        <div class="task-node-header">
+          <div class="task-node-title">${task.name}</div>
+          <div class="task-node-type">${task.type}</div>
+        </div>
+        <div class="task-node-badges">
+          <span class="badge badge-policy">Policy ✓</span>
+          <span class="badge badge-crv">CRV ✓</span>
+        </div>
+        <div class="task-node-connections">
+          <div class="connection-point input" data-task-id="${task.id}" data-type="input"></div>
+          <div class="connection-point output" data-task-id="${task.id}" data-type="output"></div>
+        </div>
+      `;
+
+      node.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('connection-point')) {
+          startConnection(e.target);
+        } else {
+          startDragNode(task, e);
+        }
+      });
+
+      node.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('connection-point')) {
+          selectTask(task);
+        }
+      });
+
+      canvasContent.appendChild(node);
+    }
+
+    // Setup canvas interactions
+    function setupCanvasInteractions() {
+      const canvas = document.getElementById('canvas');
+
+      canvas.addEventListener('mousemove', (e) => {
+        if (isDraggingNode && selectedTask) {
+          const rect = canvas.getBoundingClientRect();
+          selectedTask.x = e.clientX - rect.left - dragOffset.x;
+          selectedTask.y = e.clientY - rect.top - dragOffset.y;
+          updateTaskPosition(selectedTask);
+          renderEdges();
+        }
+      });
+
+      canvas.addEventListener('mouseup', () => {
+        isDraggingNode = false;
+      });
+    }
+
+    // Start dragging node
+    function startDragNode(task, e) {
+      isDraggingNode = true;
+      const node = document.getElementById(task.id);
+      const rect = node.getBoundingClientRect();
+      const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+      dragOffset.x = e.clientX - rect.left;
+      dragOffset.y = e.clientY - rect.top;
+    }
+
+    // Update task position
+    function updateTaskPosition(task) {
+      const node = document.getElementById(task.id);
+      node.style.left = `${task.x}px`;
+      node.style.top = `${task.y}px`;
+    }
+
+    // Start connection
+    function startConnection(point) {
+      if (point.dataset.type === 'output') {
+        isConnecting = true;
+        connectionStart = point.dataset.taskId;
+      }
+    }
+
+    // Complete connection
+    function completeConnection(targetTaskId) {
+      if (isConnecting && connectionStart && connectionStart !== targetTaskId) {
+        const edge = {
+          from: connectionStart,
+          to: targetTaskId,
+        };
+        edges.push(edge);
+        renderEdges();
+        showToast('Dependency added', 'success');
+        isConnecting = false;
+        connectionStart = null;
+      }
+    }
+
+    // Add click handler for connection points
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('connection-point')) {
+        if (e.target.dataset.type === 'input' && isConnecting) {
+          completeConnection(e.target.dataset.taskId);
+        }
+      } else if (isConnecting) {
+        isConnecting = false;
+        connectionStart = null;
+      }
+    });
+
+    // Render edges
+    function renderEdges() {
+      const svg = document.getElementById('edgesLayer');
+      svg.innerHTML = '<defs><marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="#8492a6" /></marker></defs>';
+
+      edges.forEach(edge => {
+        const fromTask = tasks.find(t => t.id === edge.from);
+        const toTask = tasks.find(t => t.id === edge.to);
+        if (!fromTask || !toTask) return;
+
+        const fromX = fromTask.x + 180;
+        const fromY = fromTask.y + 40;
+        const toX = toTask.x;
+        const toY = toTask.y + 40;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const midX = (fromX + toX) / 2;
+        path.setAttribute('d', `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`);
+        path.setAttribute('class', 'edge');
+        svg.appendChild(path);
+      });
+    }
+
+    // Select task
+    function selectTask(task) {
+      // Deselect previous
+      document.querySelectorAll('.task-node').forEach(n => n.classList.remove('selected'));
+      
+      selectedTask = task;
+      const node = document.getElementById(task.id);
+      node.classList.add('selected');
+      
+      showInspector(task);
+    }
+
+    // Show inspector
+    function showInspector(task) {
+      const panel = document.getElementById('inspectorPanel');
+      const content = document.getElementById('inspectorContent');
+      
+      panel.classList.remove('hidden');
+      
+      content.innerHTML = `
+        <div class="form-group">
+          <label class="form-label">Task ID</label>
+          <input type="text" class="form-input" value="${task.id}" disabled>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Task Name</label>
+          <input type="text" class="form-input" value="${task.name}" 
+                 onchange="updateTaskProperty('${task.id}', 'name', this.value)">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Task Type</label>
+          <select class="form-select" onchange="updateTaskProperty('${task.id}', 'type', this.value)">
+            <option value="action" ${task.type === 'action' ? 'selected' : ''}>Action</option>
+            <option value="decision" ${task.type === 'decision' ? 'selected' : ''}>Decision</option>
+            <option value="parallel" ${task.type === 'parallel' ? 'selected' : ''}>Parallel</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Risk Tier</label>
+          <select class="form-select" onchange="updateTaskProperty('${task.id}', 'riskTier', this.value)">
+            <option value="LOW" ${task.riskTier === 'LOW' ? 'selected' : ''}>Low</option>
+            <option value="MEDIUM" ${task.riskTier === 'MEDIUM' ? 'selected' : ''}>Medium</option>
+            <option value="HIGH" ${task.riskTier === 'HIGH' ? 'selected' : ''}>High</option>
+            <option value="CRITICAL" ${task.riskTier === 'CRITICAL' ? 'selected' : ''}>Critical</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Timeout (ms)</label>
+          <input type="number" class="form-input" value="${task.timeoutMs}" 
+                 onchange="updateTaskProperty('${task.id}', 'timeoutMs', parseInt(this.value))">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Max Retry Attempts</label>
+          <input type="number" class="form-input" value="${task.retry.maxAttempts}" 
+                 onchange="updateTaskRetry('${task.id}', 'maxAttempts', parseInt(this.value))">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Retry Backoff (ms)</label>
+          <input type="number" class="form-input" value="${task.retry.backoffMs}" 
+                 onchange="updateTaskRetry('${task.id}', 'backoffMs', parseInt(this.value))">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Idempotency Key</label>
+          <input type="text" class="form-input" value="${task.idempotencyKey}" 
+                 onchange="updateTaskProperty('${task.id}', 'idempotencyKey', this.value)"
+                 placeholder="Optional unique key">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Tool Name</label>
+          <input type="text" class="form-input" value="${task.toolName || ''}" 
+                 onchange="updateTaskProperty('${task.id}', 'toolName', this.value)"
+                 placeholder="e.g., file_reader, api_caller">
+        </div>
+        
+        <button class="btn btn-secondary" onclick="deleteTask('${task.id}')">Delete Task</button>
+      `;
+    }
+
+    // Update task property
+    function updateTaskProperty(taskId, property, value) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        task[property] = value;
+        
+        // Update visual if needed
+        if (property === 'name' || property === 'type' || property === 'riskTier') {
+          const node = document.getElementById(taskId);
+          if (node) {
+            node.remove();
+            renderTask(task);
+            if (selectedTask && selectedTask.id === taskId) {
+              selectTask(task);
+            }
+          }
+        }
+        
+        showToast(`Updated ${property}`, 'success');
+      }
+    }
+
+    // Update task retry config
+    function updateTaskRetry(taskId, property, value) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        task.retry[property] = value;
+        showToast(`Updated retry ${property}`, 'success');
+      }
+    }
+
+    // Delete task
+    function deleteTask(taskId) {
+      tasks = tasks.filter(t => t.id !== taskId);
+      edges = edges.filter(e => e.from !== taskId && e.to !== taskId);
+      
+      const node = document.getElementById(taskId);
+      if (node) node.remove();
+      
+      renderEdges();
+      document.getElementById('inspectorContent').innerHTML = `
+        <p style="color: #8492a6; text-align: center; padding: 40px 20px;">
+          Select a task to configure its properties
+        </p>
+      `;
+      
+      selectedTask = null;
+      showToast('Task deleted', 'info');
+    }
+
+    // Toggle inspector
+    function toggleInspector() {
+      const panel = document.getElementById('inspectorPanel');
+      panel.classList.toggle('hidden');
+    }
+
+    // Clear canvas
+    function clearCanvas() {
+      if (confirm('Are you sure you want to clear the canvas?')) {
+        tasks = [];
+        edges = [];
+        selectedTask = null;
+        document.getElementById('canvasContent').innerHTML = '';
+        document.getElementById('edgesLayer').innerHTML = '<defs><marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="#8492a6" /></marker></defs>';
+        showToast('Canvas cleared', 'info');
+      }
+    }
+
+    // Auto layout
+    function autoLayout() {
+      // Simple grid layout
+      const padding = 50;
+      const spacing = 250;
+      let x = padding;
+      let y = padding;
+      let maxHeight = 0;
+
+      tasks.forEach((task, i) => {
+        task.x = x;
+        task.y = y;
+        updateTaskPosition(task);
+
+        x += spacing;
+        if (x > 800) {
+          x = padding;
+          y += 150;
+        }
+      });
+
+      renderEdges();
+      showToast('Layout applied', 'success');
+    }
+
+    // Validate workflow
+    async function validateWorkflow() {
+      const spec = buildWorkflowSpec();
+      
+      // Show loading
+      showToast('Validating workflow...', 'info');
+      
+      try {
+        // Validate topology
+        const topologyResponse = await fetch('/api/workflows/validate-dag', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
+          },
+          body: JSON.stringify(spec)
+        });
+        
+        const topologyResult = await topologyResponse.json();
+        
+        // Validate policy
+        const policyResponse = await fetch('/api/workflows/validate-policy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || '')
+          },
+          body: JSON.stringify(spec)
+        });
+        
+        const policyResult = await policyResponse.json();
+        
+        // Show results
+        showValidationResults(topologyResult, policyResult);
+      } catch (error) {
+        showToast('Validation failed: ' + error.message, 'error');
+      }
+    }
+
+    // Show validation results
+    function showValidationResults(topology, policy) {
+      const modal = document.getElementById('validationModal');
+      const results = document.getElementById('validationResults');
+      
+      let html = '';
+      
+      // Topology validation
+      html += '<h3 style="margin-bottom: 10px;">DAG Topology</h3>';
+      if (topology.valid) {
+        html += '<div class="validation-status success">✓ DAG topology is valid</div>';
+        if (topology.topologicalOrder) {
+          html += `<p style="font-size: 13px; color: #8492a6; margin-bottom: 20px;">Execution order: ${topology.topologicalOrder.join(' → ')}</p>`;
+        }
+      } else {
+        html += '<div class="validation-status error">✗ DAG topology has errors</div>';
+        topology.errors.forEach(err => {
+          html += `
+            <div class="validation-item error">
+              <div class="validation-item-title">${err.type.toUpperCase()}</div>
+              <div class="validation-item-message">${err.message}</div>
+            </div>
+          `;
+        });
+      }
+      
+      if (topology.warnings && topology.warnings.length > 0) {
+        topology.warnings.forEach(warn => {
+          html += `
+            <div class="validation-item warning">
+              <div class="validation-item-title">WARNING</div>
+              <div class="validation-item-message">${warn.message}</div>
+            </div>
+          `;
+        });
+      }
+      
+      // Policy validation
+      html += '<h3 style="margin: 20px 0 10px;">Policy & Risk Tiers</h3>';
+      if (policy.valid) {
+        html += '<div class="validation-status success">✓ Policy validation passed</div>';
+      } else {
+        html += '<div class="validation-status error">✗ Policy validation failed</div>';
+        policy.violations.forEach(violation => {
+          html += `
+            <div class="validation-item ${violation.severity}">
+              <div class="validation-item-title">${violation.type.toUpperCase()} - Task: ${violation.taskId}</div>
+              <div class="validation-item-message">${violation.message}</div>
+            </div>
+          `;
+        });
+      }
+      
+      if (policy.warnings && policy.warnings.length > 0) {
+        policy.warnings.forEach(warn => {
+          html += `
+            <div class="validation-item warning">
+              <div class="validation-item-title">WARNING - Task: ${warn.taskId}</div>
+              <div class="validation-item-message">${warn.message}</div>
+            </div>
+          `;
+        });
+      }
+      
+      results.innerHTML = html;
+      modal.classList.add('active');
+    }
+
+    // Close modal
+    function closeModal() {
+      document.getElementById('validationModal').classList.remove('active');
+    }
+
+    // Build workflow spec
+    function buildWorkflowSpec() {
+      const dependencies = {};
+      
+      // Build dependencies from edges
+      edges.forEach(edge => {
+        if (!dependencies[edge.to]) {
+          dependencies[edge.to] = [];
+        }
+        dependencies[edge.to].push(edge.from);
+      });
+      
+      return {
+        id: 'workflow-' + Date.now(),
+        name: document.getElementById('workflowName').textContent,
+        tasks: tasks.map(t => ({
+          id: t.id,
+          name: t.name,
+          type: t.type,
+          riskTier: t.riskTier,
+          retry: t.retry,
+          timeoutMs: t.timeoutMs,
+          idempotencyKey: t.idempotencyKey || undefined,
+          toolName: t.toolName || undefined,
+        })),
+        dependencies: dependencies,
+      };
+    }
+
+    // Export workflow
+    function exportWorkflow() {
+      const spec = buildWorkflowSpec();
+      const blob = new Blob([JSON.stringify(spec, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `workflow-${Date.now()}.json`;
+      a.click();
+      showToast('Workflow exported', 'success');
+    }
+
+    // Import workflow
+    function importWorkflow() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const spec = JSON.parse(event.target.result);
+            loadWorkflowSpec(spec);
+            showToast('Workflow imported', 'success');
+          } catch (error) {
+            showToast('Failed to import: ' + error.message, 'error');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+
+    // Load workflow spec
+    function loadWorkflowSpec(spec) {
+      clearCanvas();
+      
+      // Load tasks
+      spec.tasks.forEach((taskData, i) => {
+        const task = {
+          id: taskData.id,
+          name: taskData.name,
+          type: taskData.type,
+          x: 100 + (i % 3) * 250,
+          y: 100 + Math.floor(i / 3) * 150,
+          riskTier: taskData.riskTier || 'LOW',
+          retry: taskData.retry || { maxAttempts: 3, backoffMs: 1000 },
+          timeoutMs: taskData.timeoutMs || 30000,
+          idempotencyKey: taskData.idempotencyKey || '',
+          toolName: taskData.toolName || '',
+        };
+        tasks.push(task);
+        renderTask(task);
+      });
+      
+      // Load edges
+      if (spec.dependencies) {
+        Object.keys(spec.dependencies).forEach(toId => {
+          const fromIds = spec.dependencies[toId];
+          fromIds.forEach(fromId => {
+            edges.push({ from: fromId, to: toId });
+          });
+        });
+      }
+      
+      renderEdges();
+      autoLayout();
+    }
+
+    // Show toast
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<div class="toast-message">${message}</div>`;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

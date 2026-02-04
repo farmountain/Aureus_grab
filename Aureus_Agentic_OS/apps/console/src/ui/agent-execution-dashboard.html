@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Execution Dashboard - Aureus Console</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+    }
+
+    .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .navbar h1 {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .navbar-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: white;
+      color: #667eea;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .btn-warning:hover {
+      background: #d97706;
+    }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .metric-label {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .metric-change {
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    .metric-change.positive {
+      color: #10b981;
+    }
+
+    .metric-change.negative {
+      color: #ef4444;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #f3f4f6;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .execution-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .execution-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      transition: all 0.2s;
+    }
+
+    .execution-item:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transform: translateY(-1px);
+    }
+
+    .execution-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .execution-name {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-badge.running {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-badge.completed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-badge.failed {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status-badge.paused {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .execution-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .detail-value {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #f3f4f6;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s;
+    }
+
+    .approval-queue {
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .approval-item {
+      border: 2px solid #fef3c7;
+      background: #fffbeb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .approval-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 12px;
+    }
+
+    .approval-title {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .risk-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .risk-badge.high {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .risk-badge.critical {
+      background: #450a0a;
+      color: white;
+    }
+
+    .approval-details {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+
+    .approval-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .control-group {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .control-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 12px;
+    }
+
+    .control-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .action-button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .action-button.pause {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .action-button.pause:hover {
+      background: #fde68a;
+    }
+
+    .action-button.rollback {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .action-button.rollback:hover {
+      background: #bfdbfe;
+    }
+
+    .action-button.kill {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .action-button.kill:hover {
+      background: #fecaca;
+    }
+
+    .timeline {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .timeline-marker {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+
+    .timeline-marker.success {
+      background: #10b981;
+    }
+
+    .timeline-marker.failure {
+      background: #ef4444;
+    }
+
+    .timeline-marker.info {
+      background: #3b82f6;
+    }
+
+    .timeline-content {
+      flex: 1;
+    }
+
+    .timeline-time {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+
+    .timeline-text {
+      font-size: 14px;
+      color: #374151;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .status-badge.running::before {
+      content: '●';
+      margin-right: 4px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h1>🤖 Agent Execution Dashboard</h1>
+    <div class="navbar-actions">
+      <button class="btn btn-primary" onclick="refreshDashboard()">↻ Refresh</button>
+      <button class="btn btn-danger" onclick="emergencyShutdown()">⚠️ Emergency Shutdown</button>
+    </div>
+  </div>
+
+  <div class="dashboard">
+    <!-- Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Active Agents</div>
+        <div class="metric-value" id="activeAgents">3</div>
+        <div class="metric-change positive">↑ 2 from yesterday</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Executions</div>
+        <div class="metric-value" id="totalExecutions">127</div>
+        <div class="metric-change positive">↑ 15% this week</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Success Rate</div>
+        <div class="metric-value" id="successRate">94.2%</div>
+        <div class="metric-change positive">↑ 2.1%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Pending Approvals</div>
+        <div class="metric-value" id="pendingApprovals">2</div>
+        <div class="metric-change negative">⚠️ Requires attention</div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Left Panel: Executions -->
+      <div>
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Active Executions</h2>
+            <button class="btn btn-primary btn-sm" onclick="createNewAgent()">+ New Agent</button>
+          </div>
+          <div class="execution-list">
+            <!-- Execution Item 1 -->
+            <div class="execution-item">
+              <div class="execution-header">
+                <div class="execution-name">Data Processing Agent</div>
+                <span class="status-badge running">Running</span>
+              </div>
+              <div class="execution-details">
+                <div class="detail-item">
+                  <span class="detail-label">Iteration</span>
+                  <span class="detail-value">3 / 10</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Tasks</span>
+                  <span class="detail-value">8 / 12</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Duration</span>
+                  <span class="detail-value">2m 34s</span>
+                </div>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 67%"></div>
+              </div>
+            </div>
+
+            <!-- Execution Item 2 -->
+            <div class="execution-item">
+              <div class="execution-header">
+                <div class="execution-name">API Integration Agent</div>
+                <span class="status-badge paused">Pending Approval</span>
+              </div>
+              <div class="execution-details">
+                <div class="detail-item">
+                  <span class="detail-label">Iteration</span>
+                  <span class="detail-value">2 / 8</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Tasks</span>
+                  <span class="detail-value">5 / 10</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Duration</span>
+                  <span class="detail-value">1m 12s</span>
+                </div>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 50%"></div>
+              </div>
+            </div>
+
+            <!-- Execution Item 3 -->
+            <div class="execution-item">
+              <div class="execution-header">
+                <div class="execution-name">Report Generator Agent</div>
+                <span class="status-badge completed">Completed</span>
+              </div>
+              <div class="execution-details">
+                <div class="detail-item">
+                  <span class="detail-label">Iteration</span>
+                  <span class="detail-value">5 / 5</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Tasks</span>
+                  <span class="detail-value">15 / 15</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Duration</span>
+                  <span class="detail-value">4m 52s</span>
+                </div>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 100%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Execution Timeline -->
+        <div class="panel" style="margin-top: 24px;">
+          <div class="panel-header">
+            <h2 class="panel-title">Execution Timeline</h2>
+          </div>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-marker success"></div>
+              <div class="timeline-content">
+                <div class="timeline-time">2 minutes ago</div>
+                <div class="timeline-text">Task "process-data-batch-3" completed successfully</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-marker info"></div>
+              <div class="timeline-content">
+                <div class="timeline-time">5 minutes ago</div>
+                <div class="timeline-text">CRV validation passed for commit #7a3f9b</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-marker failure"></div>
+              <div class="timeline-content">
+                <div class="timeline-time">8 minutes ago</div>
+                <div class="timeline-text">Task "api-call-external" failed - retrying (attempt 2/3)</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-marker success"></div>
+              <div class="timeline-content">
+                <div class="timeline-time">12 minutes ago</div>
+                <div class="timeline-text">Agent "Data Processing Agent" started iteration 3</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Approvals & Controls -->
+      <div>
+        <!-- Approval Queue -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Approval Queue</h2>
+            <span class="status-badge" style="background: #fef3c7; color: #92400e;">2 Pending</span>
+          </div>
+          <div class="approval-queue">
+            <!-- Approval Item 1 -->
+            <div class="approval-item">
+              <div class="approval-header">
+                <div class="approval-title">Delete Database Records</div>
+                <span class="risk-badge high">High Risk</span>
+              </div>
+              <div class="approval-details">
+                <div><strong>Agent:</strong> API Integration Agent</div>
+                <div><strong>Action:</strong> Delete 150 records from production database</div>
+                <div><strong>Reason:</strong> Cleanup outdated entries per retention policy</div>
+                <div><strong>Requested:</strong> 3 minutes ago</div>
+              </div>
+              <div class="approval-actions">
+                <button class="btn btn-success btn-sm" onclick="approveAction('action-1')">✓ Approve</button>
+                <button class="btn btn-danger btn-sm" onclick="denyAction('action-1')">✗ Deny</button>
+                <button class="btn btn-warning btn-sm" onclick="viewDetails('action-1')">👁 Details</button>
+              </div>
+            </div>
+
+            <!-- Approval Item 2 -->
+            <div class="approval-item">
+              <div class="approval-header">
+                <div class="approval-title">Execute System Command</div>
+                <span class="risk-badge critical">Critical Risk</span>
+              </div>
+              <div class="approval-details">
+                <div><strong>Agent:</strong> System Maintenance Agent</div>
+                <div><strong>Action:</strong> Restart service "payment-processor"</div>
+                <div><strong>Reason:</strong> Service health check failed, restart required</div>
+                <div><strong>Requested:</strong> 7 minutes ago</div>
+              </div>
+              <div class="approval-actions">
+                <button class="btn btn-success btn-sm" onclick="approveAction('action-2')">✓ Approve</button>
+                <button class="btn btn-danger btn-sm" onclick="denyAction('action-2')">✗ Deny</button>
+                <button class="btn btn-warning btn-sm" onclick="viewDetails('action-2')">👁 Details</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="panel" style="margin-top: 24px;">
+          <div class="panel-header">
+            <h2 class="panel-title">Agent Controls</h2>
+          </div>
+          <div class="controls-panel">
+            <div class="control-group">
+              <div class="control-label">Execution Control</div>
+              <div class="control-actions">
+                <button class="action-button pause" onclick="pauseAgent()">
+                  <span>⏸</span>
+                  <span>Pause Agent</span>
+                </button>
+                <button class="action-button pause" onclick="resumeAgent()">
+                  <span>▶</span>
+                  <span>Resume Agent</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <div class="control-label">Recovery Actions</div>
+              <div class="control-actions">
+                <button class="action-button rollback" onclick="rollbackAgent()">
+                  <span>↶</span>
+                  <span>Rollback to Checkpoint</span>
+                </button>
+                <button class="action-button rollback" onclick="retryTask()">
+                  <span>↻</span>
+                  <span>Retry Failed Task</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <div class="control-label">Emergency Actions</div>
+              <div class="control-actions">
+                <button class="action-button kill" onclick="killAgent()">
+                  <span>⏹</span>
+                  <span>Kill Agent (Force Stop)</span>
+                </button>
+                <button class="action-button kill" onclick="emergencyRollback()">
+                  <span>⚠️</span>
+                  <span>Emergency Rollback</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Mock functions - replace with actual API calls
+    function refreshDashboard() {
+      console.log('Refreshing dashboard...');
+      alert('Dashboard refreshed');
+    }
+
+    function emergencyShutdown() {
+      if (confirm('Are you sure you want to perform an emergency shutdown of all agents?')) {
+        console.log('Emergency shutdown initiated');
+        alert('Emergency shutdown initiated');
+      }
+    }
+
+    function createNewAgent() {
+      window.location.href = '/ui/agent-studio.html';
+    }
+
+    function approveAction(actionId) {
+      console.log(`Approving action: ${actionId}`);
+      alert(`Action ${actionId} approved`);
+    }
+
+    function denyAction(actionId) {
+      if (confirm('Are you sure you want to deny this action?')) {
+        console.log(`Denying action: ${actionId}`);
+        alert(`Action ${actionId} denied`);
+      }
+    }
+
+    function viewDetails(actionId) {
+      console.log(`Viewing details for action: ${actionId}`);
+      alert(`Opening details for action ${actionId}`);
+    }
+
+    function pauseAgent() {
+      console.log('Pausing agent');
+      alert('Agent paused');
+    }
+
+    function resumeAgent() {
+      console.log('Resuming agent');
+      alert('Agent resumed');
+    }
+
+    function rollbackAgent() {
+      if (confirm('Rollback agent to last checkpoint?')) {
+        console.log('Rolling back agent');
+        alert('Agent rolled back to checkpoint');
+      }
+    }
+
+    function retryTask() {
+      console.log('Retrying failed task');
+      alert('Retrying failed task');
+    }
+
+    function killAgent() {
+      if (confirm('DANGER: Force stop agent? This cannot be undone.')) {
+        console.log('Killing agent');
+        alert('Agent killed');
+      }
+    }
+
+    function emergencyRollback() {
+      if (confirm('DANGER: Perform emergency rollback? This will revert all changes.')) {
+        console.log('Emergency rollback initiated');
+        alert('Emergency rollback initiated');
+      }
+    }
+
+    // Auto-refresh every 5 seconds
+    setInterval(() => {
+      // Update metrics and execution status
+      console.log('Auto-refreshing dashboard data...');
+    }, 5000);
+  </script>
+</body>
+</html>

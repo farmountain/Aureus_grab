@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Model Studio - Aureus Console</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+
+    .header-links {
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    .header-links a {
+      color: white;
+      text-decoration: underline;
+      opacity: 0.9;
+      margin: 0 10px;
+    }
+
+    .header-links a:hover {
+      opacity: 1;
+    }
+
+    .wizard-progress {
+      display: flex;
+      justify-content: space-around;
+      padding: 20px 30px;
+      background: #f7f9fc;
+      border-bottom: 1px solid #e1e8ed;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #8492a6;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e1e8ed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .step.active {
+      color: #667eea;
+    }
+
+    .step.active .step-number {
+      background: #667eea;
+      color: white;
+    }
+
+    .step.completed {
+      color: #10b981;
+    }
+
+    .step.completed .step-number {
+      background: #10b981;
+      color: white;
+    }
+
+    .main-content {
+      padding: 40px;
+    }
+
+    .step-content {
+      display: none;
+    }
+
+    .step-content.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-group-inline {
+      display: flex;
+      gap: 15px;
+    }
+
+    .form-group-inline .form-group {
+      flex: 1;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e1e8ed;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #f7f9fc;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .alert {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .alert.show {
+      display: block;
+    }
+
+    .alert-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    .alert-warning {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+
+    .spec-preview {
+      background: #f7f9fc;
+      border: 1px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 20px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .spec-preview pre {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .entity-list, .relation-list, .constraint-list, .rule-list {
+      border: 1px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .entity-item, .relation-item, .constraint-item, .rule-item {
+      background: white;
+      border: 1px solid #e1e8ed;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+
+    .entity-item h4, .relation-item h4, .constraint-item h4, .rule-item h4 {
+      margin-bottom: 10px;
+      color: #667eea;
+    }
+
+    .validation-results {
+      margin-top: 20px;
+    }
+
+    .validation-item {
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .validation-item.error {
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+    }
+
+    .validation-item.warning {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+    }
+
+    .validation-item.success {
+      background: #d1fae5;
+      border: 1px solid #6ee7b7;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e1e8ed;
+    }
+
+    .help-text {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 5px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: #f7f9fc;
+      border: 1px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🌍 World Model Studio</h1>
+      <p>Generate and validate structured world models from natural language descriptions</p>
+      <div class="header-links">
+        <a href="/wizard">Workflow Wizard</a> |
+        <a href="/agent-studio">Agent Studio</a> |
+        <a href="/studio">DAG Studio</a> |
+        <a href="/test">Test & Validate</a>
+      </div>
+    </div>
+
+    <div class="wizard-progress">
+      <div class="step active" data-step="1">
+        <div class="step-number">1</div>
+        <span>Generate</span>
+      </div>
+      <div class="step" data-step="2">
+        <div class="step-number">2</div>
+        <span>Validate</span>
+      </div>
+      <div class="step" data-step="3">
+        <div class="step-number">3</div>
+        <span>Preview</span>
+      </div>
+      <div class="step" data-step="4">
+        <div class="step-number">4</div>
+        <span>Save</span>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <!-- Step 1: Generate -->
+      <div class="step-content active" id="step1">
+        <h2 class="section-title">Step 1: Generate World Model</h2>
+        
+        <div id="alert-generate" class="alert"></div>
+
+        <div class="form-group">
+          <label for="domain">Domain *</label>
+          <input type="text" id="domain" placeholder="e.g., E-commerce, Healthcare, Finance" required>
+          <div class="help-text">The domain or category of your world model</div>
+        </div>
+
+        <div class="form-group">
+          <label for="name">Model Name</label>
+          <input type="text" id="name" placeholder="e.g., E-commerce Order Management">
+          <div class="help-text">Optional: Leave blank to auto-generate from description</div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Domain Description *</label>
+          <textarea id="description" placeholder="Describe your domain in natural language. Include entities, their relationships, constraints, and business rules.
+
+Example:
+An e-commerce system with customers, products, and orders. Customers can place orders containing multiple products. Each product has a price and inventory count. Orders have a status (pending, shipped, delivered). The system should ensure inventory is available before confirming orders, and update inventory when orders are placed." required></textarea>
+          <div class="help-text">Provide a detailed description of your domain model</div>
+        </div>
+
+        <div class="form-group-inline">
+          <div class="form-group">
+            <label for="preferredStyle">Style</label>
+            <select id="preferredStyle">
+              <option value="minimal">Minimal</option>
+              <option value="detailed" selected>Detailed</option>
+              <option value="comprehensive">Comprehensive</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <div class="checkbox-group">
+              <input type="checkbox" id="includeExamples">
+              <label for="includeExamples" style="margin-bottom: 0;">Include examples</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <div></div>
+          <button class="btn btn-primary" onclick="generateWorldModel()">
+            Generate World Model
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Validate -->
+      <div class="step-content" id="step2">
+        <h2 class="section-title">Step 2: Validate World Model</h2>
+        
+        <div id="alert-validate" class="alert"></div>
+
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-entities">0</div>
+            <div class="stat-label">Entities</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-relations">0</div>
+            <div class="stat-label">Relations</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-constraints">0</div>
+            <div class="stat-label">Constraints</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-rules">0</div>
+            <div class="stat-label">Causal Rules</div>
+          </div>
+        </div>
+
+        <div id="validation-results" class="validation-results"></div>
+
+        <div class="button-group">
+          <button class="btn btn-secondary" onclick="goToStep(1)">
+            Back
+          </button>
+          <div>
+            <button class="btn btn-secondary" onclick="validateWorldModel()" style="margin-right: 10px;">
+              Re-validate
+            </button>
+            <button class="btn btn-primary" onclick="goToStep(3)" id="btn-next-preview">
+              Next: Preview
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Preview -->
+      <div class="step-content" id="step3">
+        <h2 class="section-title">Step 3: Preview World Model</h2>
+        
+        <div id="alert-preview" class="alert"></div>
+
+        <div class="form-group">
+          <label>Entities</label>
+          <div id="entities-preview" class="entity-list"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Relations</label>
+          <div id="relations-preview" class="relation-list"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Constraints</label>
+          <div id="constraints-preview" class="constraint-list"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Causal Rules</label>
+          <div id="rules-preview" class="rule-list"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Full Specification (JSON)</label>
+          <div class="spec-preview">
+            <pre id="spec-json"></pre>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn btn-secondary" onclick="goToStep(2)">
+            Back
+          </button>
+          <button class="btn btn-primary" onclick="goToStep(4)">
+            Next: Save
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 4: Save -->
+      <div class="step-content" id="step4">
+        <h2 class="section-title">Step 4: Save World Model</h2>
+        
+        <div id="alert-save" class="alert"></div>
+
+        <p style="margin-bottom: 20px;">
+          Your world model is ready to be saved. Once saved, it will be versioned and can be used in workflows and agents.
+        </p>
+
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-value" id="final-entities">0</div>
+            <div class="stat-label">Entities</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="final-relations">0</div>
+            <div class="stat-label">Relations</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="final-constraints">0</div>
+            <div class="stat-label">Constraints</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="final-rules">0</div>
+            <div class="stat-label">Causal Rules</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Model Name</label>
+          <p id="final-name" style="font-weight: 600; color: #1f2937;"></p>
+        </div>
+
+        <div class="form-group">
+          <label>Domain</label>
+          <p id="final-domain" style="font-weight: 600; color: #1f2937;"></p>
+        </div>
+
+        <div class="form-group">
+          <label>Version</label>
+          <p id="final-version" style="font-weight: 600; color: #1f2937;"></p>
+        </div>
+
+        <div class="button-group">
+          <button class="btn btn-secondary" onclick="goToStep(3)">
+            Back
+          </button>
+          <div>
+            <button class="btn btn-secondary" onclick="downloadSpec()" style="margin-right: 10px;">
+              Download JSON
+            </button>
+            <button class="btn btn-primary" onclick="saveWorldModel()">
+              Save World Model
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentStep = 1;
+    let worldModelSpec = null;
+    let validationResult = null;
+
+    // Authentication
+    function getAuthToken() {
+      return localStorage.getItem('authToken') || 'dev-token';
+    }
+
+    function goToStep(step) {
+      // Hide all steps
+      document.querySelectorAll('.step-content').forEach(el => {
+        el.classList.remove('active');
+      });
+
+      // Show target step
+      document.getElementById(`step${step}`).classList.add('active');
+
+      // Update progress
+      document.querySelectorAll('.step').forEach((el, idx) => {
+        const stepNum = idx + 1;
+        el.classList.remove('active', 'completed');
+        if (stepNum === step) {
+          el.classList.add('active');
+        } else if (stepNum < step) {
+          el.classList.add('completed');
+        }
+      });
+
+      currentStep = step;
+    }
+
+    function showAlert(stepId, type, message) {
+      const alert = document.getElementById(`alert-${stepId}`);
+      alert.className = `alert alert-${type} show`;
+      alert.textContent = message;
+      setTimeout(() => {
+        alert.classList.remove('show');
+      }, 5000);
+    }
+
+    async function generateWorldModel() {
+      const domain = document.getElementById('domain').value.trim();
+      const name = document.getElementById('name').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const preferredStyle = document.getElementById('preferredStyle').value;
+      const includeExamples = document.getElementById('includeExamples').checked;
+
+      if (!domain || !description) {
+        showAlert('generate', 'error', 'Please fill in all required fields');
+        return;
+      }
+
+      const button = event.target;
+      button.disabled = true;
+      button.innerHTML = '<span class="loading"></span> Generating...';
+
+      try {
+        const response = await fetch('/api/world-models/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({
+            domain,
+            name: name || undefined,
+            description,
+            preferredStyle,
+            includeExamples
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.details || error.error || 'Generation failed');
+        }
+
+        const result = await response.json();
+        worldModelSpec = result.spec;
+
+        showAlert('generate', 'success', 'World model generated successfully!');
+        
+        // Automatically validate and move to next step
+        setTimeout(() => {
+          goToStep(2);
+          validateWorldModel();
+        }, 1000);
+
+      } catch (error) {
+        showAlert('generate', 'error', `Failed to generate: ${error.message}`);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Generate World Model';
+      }
+    }
+
+    async function validateWorldModel() {
+      if (!worldModelSpec) {
+        showAlert('validate', 'error', 'No world model to validate');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/world-models/validate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify(worldModelSpec)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.details || error.error || 'Validation failed');
+        }
+
+        validationResult = await response.json();
+
+        // Update stats
+        document.getElementById('stat-entities').textContent = worldModelSpec.entities?.length || 0;
+        document.getElementById('stat-relations').textContent = worldModelSpec.relations?.length || 0;
+        document.getElementById('stat-constraints').textContent = worldModelSpec.constraints?.length || 0;
+        document.getElementById('stat-rules').textContent = worldModelSpec.causalRules?.length || 0;
+
+        // Display validation results
+        const resultsDiv = document.getElementById('validation-results');
+        resultsDiv.innerHTML = '<h3 style="margin-bottom: 15px;">Validation Results</h3>';
+
+        if (validationResult.valid) {
+          resultsDiv.innerHTML += '<div class="validation-item success">✓ All validations passed</div>';
+        }
+
+        if (validationResult.errors && validationResult.errors.length > 0) {
+          validationResult.errors.forEach(error => {
+            resultsDiv.innerHTML += `<div class="validation-item error">✗ ${error}</div>`;
+          });
+        }
+
+        if (validationResult.warnings && validationResult.warnings.length > 0) {
+          validationResult.warnings.forEach(warning => {
+            resultsDiv.innerHTML += `<div class="validation-item warning">⚠ ${warning}</div>`;
+          });
+        }
+
+        if (validationResult.crvResults) {
+          resultsDiv.innerHTML += '<h4 style="margin-top: 20px; margin-bottom: 10px;">CRV Validation Details</h4>';
+          validationResult.crvResults.forEach(result => {
+            const type = result.valid ? 'success' : 'error';
+            const icon = result.valid ? '✓' : '✗';
+            resultsDiv.innerHTML += `<div class="validation-item ${type}">${icon} ${result.validator}: ${result.message}</div>`;
+          });
+        }
+
+        // Enable/disable next button based on validation
+        document.getElementById('btn-next-preview').disabled = !validationResult.valid;
+
+        if (validationResult.valid) {
+          showAlert('validate', 'success', 'World model is valid!');
+        } else {
+          showAlert('validate', 'error', 'Validation failed. Please review the errors.');
+        }
+
+      } catch (error) {
+        showAlert('validate', 'error', `Validation error: ${error.message}`);
+      }
+    }
+
+    function renderPreview() {
+      if (!worldModelSpec) return;
+
+      // Entities
+      const entitiesDiv = document.getElementById('entities-preview');
+      entitiesDiv.innerHTML = worldModelSpec.entities.map(entity => `
+        <div class="entity-item">
+          <h4>${entity.name}</h4>
+          <p><strong>ID:</strong> ${entity.id}</p>
+          ${entity.description ? `<p><strong>Description:</strong> ${entity.description}</p>` : ''}
+          <p><strong>Attributes:</strong> ${entity.attributes.length}</p>
+          <ul style="margin-left: 20px; margin-top: 10px;">
+            ${entity.attributes.map(attr => `
+              <li>${attr.name} (${attr.type})${attr.required ? ' *' : ''}</li>
+            `).join('')}
+          </ul>
+        </div>
+      `).join('') || '<p>No entities defined</p>';
+
+      // Relations
+      const relationsDiv = document.getElementById('relations-preview');
+      relationsDiv.innerHTML = worldModelSpec.relations?.map(relation => `
+        <div class="relation-item">
+          <h4>${relation.name}</h4>
+          <p><strong>Type:</strong> ${relation.type}</p>
+          <p><strong>From:</strong> ${relation.sourceEntity} → <strong>To:</strong> ${relation.targetEntity}</p>
+          ${relation.bidirectional ? '<p><strong>Bidirectional:</strong> Yes</p>' : ''}
+        </div>
+      `).join('') || '<p>No relations defined</p>';
+
+      // Constraints
+      const constraintsDiv = document.getElementById('constraints-preview');
+      constraintsDiv.innerHTML = worldModelSpec.constraints?.map(constraint => `
+        <div class="constraint-item">
+          <h4>${constraint.name}</h4>
+          <p><strong>Type:</strong> ${constraint.type}</p>
+          <p><strong>Entity:</strong> ${constraint.entity}</p>
+          <p><strong>Attributes:</strong> ${constraint.attributes.join(', ')}</p>
+          <p><strong>Rule:</strong> ${constraint.rule}</p>
+          <p><strong>Severity:</strong> ${constraint.severity}</p>
+        </div>
+      `).join('') || '<p>No constraints defined</p>';
+
+      // Causal Rules
+      const rulesDiv = document.getElementById('rules-preview');
+      rulesDiv.innerHTML = worldModelSpec.causalRules?.map(rule => `
+        <div class="rule-item">
+          <h4>${rule.name}</h4>
+          <p><strong>Priority:</strong> ${rule.priority}</p>
+          <p><strong>Conditions:</strong> ${rule.conditions.length}</p>
+          <ul style="margin-left: 20px; margin-top: 5px;">
+            ${rule.conditions.map(cond => `
+              <li>${cond.entity}.${cond.attribute} ${cond.operator} ${JSON.stringify(cond.value)}</li>
+            `).join('')}
+          </ul>
+          <p><strong>Effects:</strong> ${rule.effects.length}</p>
+          <ul style="margin-left: 20px; margin-top: 5px;">
+            ${rule.effects.map(eff => `
+              <li>${eff.entity}.${eff.attribute} ${eff.action} ${eff.value ? JSON.stringify(eff.value) : '(computed)'}</li>
+            `).join('')}
+          </ul>
+        </div>
+      `).join('') || '<p>No causal rules defined</p>';
+
+      // JSON
+      document.getElementById('spec-json').textContent = JSON.stringify(worldModelSpec, null, 2);
+    }
+
+    function renderFinalStep() {
+      if (!worldModelSpec) return;
+
+      document.getElementById('final-entities').textContent = worldModelSpec.entities?.length || 0;
+      document.getElementById('final-relations').textContent = worldModelSpec.relations?.length || 0;
+      document.getElementById('final-constraints').textContent = worldModelSpec.constraints?.length || 0;
+      document.getElementById('final-rules').textContent = worldModelSpec.causalRules?.length || 0;
+      document.getElementById('final-name').textContent = worldModelSpec.name;
+      document.getElementById('final-domain').textContent = worldModelSpec.domain;
+      document.getElementById('final-version').textContent = worldModelSpec.version;
+    }
+
+    // Override goToStep to render previews
+    const originalGoToStep = goToStep;
+    goToStep = function(step) {
+      originalGoToStep(step);
+      if (step === 3) {
+        renderPreview();
+      } else if (step === 4) {
+        renderFinalStep();
+      }
+    };
+
+    function downloadSpec() {
+      if (!worldModelSpec) return;
+
+      const dataStr = JSON.stringify(worldModelSpec, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${worldModelSpec.id}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function saveWorldModel() {
+      if (!worldModelSpec) {
+        showAlert('save', 'error', 'No world model to save');
+        return;
+      }
+
+      const button = event.target;
+      button.disabled = true;
+      button.innerHTML = '<span class="loading"></span> Saving...';
+
+      try {
+        const response = await fetch('/api/world-models', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify(worldModelSpec)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.details || error.error || 'Save failed');
+        }
+
+        const result = await response.json();
+        showAlert('save', 'success', `World model saved successfully! ID: ${result.id}, Version: ${result.version}`);
+
+        // Reset form after successful save
+        setTimeout(() => {
+          if (confirm('World model saved! Would you like to create another?')) {
+            location.reload();
+          }
+        }, 2000);
+
+      } catch (error) {
+        showAlert('save', 'error', `Failed to save: ${error.message}`);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Save World Model';
+      }
+    }
+  </script>
+</body>
+</html>

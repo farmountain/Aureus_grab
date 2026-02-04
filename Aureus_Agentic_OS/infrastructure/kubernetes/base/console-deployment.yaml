@@ -1,0 +1,153 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aureus-console
+  namespace: aureus
+  labels:
+    app: aureus-console
+    component: backend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: aureus-console
+  template:
+    metadata:
+      labels:
+        app: aureus-console
+        component: backend
+    spec:
+      serviceAccountName: aureus-console
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: console
+        image: aureus/console:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-config
+              key: PORT
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-config
+              key: LOG_LEVEL
+        - name: DATABASE_URL
+          value: "postgresql://aureus:$(DB_PASSWORD)@postgres:5432/aureus"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: aureus-secrets
+              key: DB_PASSWORD
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: aureus-secrets
+              key: JWT_SECRET
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aureus-secrets
+              key: OPENAI_API_KEY
+              optional: true
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-config
+              key: REDIS_URL
+        - name: LLM_PROVIDER
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-config
+              key: LLM_PROVIDER
+        - name: LLM_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-config
+              key: LLM_MODEL
+        - name: ENABLE_SANDBOX
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-config
+              key: ENABLE_SANDBOX
+        - name: PROMETHEUS_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-config
+              key: PROMETHEUS_ENABLED
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        volumeMounts:
+        - name: event-logs
+          mountPath: /app/var/run
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+      volumes:
+      - name: event-logs
+        persistentVolumeClaim:
+          claimName: aureus-event-logs
+      - name: config
+        configMap:
+          name: aureus-config
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aureus-event-logs
+  namespace: aureus
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aureus-console
+  namespace: aureus

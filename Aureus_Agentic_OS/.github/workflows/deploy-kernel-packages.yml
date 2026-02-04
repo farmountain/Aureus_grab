@@ -1,0 +1,252 @@
+name: Deploy Kernel Packages
+
+on:
+  push:
+    branches:
+      - main
+      - production
+    paths:
+      - 'packages/**'
+      - '.github/workflows/deploy-kernel-packages.yml'
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: 'Packages to deploy (comma-separated, or "all")'
+        required: true
+        type: string
+        default: 'all'
+      version:
+        description: 'Version to publish (e.g., 0.1.1)'
+        required: true
+        type: string
+      registry:
+        description: 'Target registry'
+        required: true
+        type: choice
+        options:
+          - npm
+          - github
+          - private
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build Kernel Packages
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        package:
+          - observability
+          - world-model
+          - policy
+          - memory-hipcortex
+          - crv
+          - hypothesis
+          - kernel
+          - tools
+          - perception
+          - reflexion
+          - benchright
+          - evaluation-harness
+          - robotics
+          - sdk
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build dependencies first
+        run: |
+          # Build core dependencies
+          npm run build --workspace=@aureus/observability
+          npm run build --workspace=@aureus/world-model
+          npm run build --workspace=@aureus/policy
+        continue-on-error: false
+
+      - name: Build package
+        run: npm run build --workspace=@aureus/${{ matrix.package }}
+        continue-on-error: true
+
+      - name: Run tests
+        run: npm run test --workspace=@aureus/${{ matrix.package }}
+        continue-on-error: true
+
+      - name: Pack package
+        run: |
+          cd packages/${{ matrix.package }}
+          npm pack
+          mkdir -p ../../artifacts
+          mv *.tgz ../../artifacts/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.package }}-${{ github.sha }}
+          path: artifacts/*.tgz
+          retention-days: 30
+
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all packages
+        run: |
+          npm run build --workspace=@aureus/observability
+          npm run build --workspace=@aureus/world-model
+          npm run build --workspace=@aureus/policy
+          npm run build --workspace=@aureus/memory-hipcortex
+          npm run build --workspace=@aureus/crv
+          npm run build --workspace=@aureus/hypothesis
+          npm run build --workspace=@aureus/kernel
+        continue-on-error: true
+
+      - name: Run integration tests
+        run: npm test
+        continue-on-error: true
+
+  publish-staging:
+    name: Publish to Staging Registry
+    runs-on: ubuntu-latest
+    needs: [build, test-integration]
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && contains(github.event.inputs.registry, 'npm'))
+    
+    strategy:
+      matrix:
+        package:
+          - observability
+          - world-model
+          - policy
+          - memory-hipcortex
+          - crv
+          - hypothesis
+          - kernel
+          - tools
+          - perception
+          - reflexion
+          - benchright
+          - evaluation-harness
+          - robotics
+          - sdk
+    
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: package-${{ matrix.package }}-${{ github.sha }}
+
+      - name: Publish to staging/test registry
+        run: |
+          echo "Publishing @aureus/${{ matrix.package }} to staging registry..."
+          echo "Example commands:"
+          echo "  npm publish *.tgz --tag staging --registry https://staging-registry.example.com"
+          echo "  npm publish *.tgz --tag next --access public"
+          echo ""
+          echo "Note: Configure NPM_TOKEN secret for actual publishing"
+
+  publish-production:
+    name: Publish to Production Registry
+    runs-on: ubuntu-latest
+    needs: [build, test-integration, publish-staging]
+    if: github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && contains(github.event.inputs.registry, 'npm'))
+    
+    strategy:
+      matrix:
+        package:
+          - observability
+          - world-model
+          - policy
+          - memory-hipcortex
+          - crv
+          - hypothesis
+          - kernel
+          - tools
+          - perception
+          - reflexion
+          - benchright
+          - evaluation-harness
+          - robotics
+          - sdk
+    
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: package-${{ matrix.package }}-${{ github.sha }}
+
+      - name: Create backup
+        run: |
+          echo "Creating backup of current published version..."
+          echo "Example: npm view @aureus/${{ matrix.package }} version > previous-version.txt"
+
+      - name: Publish to production registry
+        run: |
+          echo "Publishing @aureus/${{ matrix.package }} to production registry..."
+          echo "Example commands:"
+          echo "  npm publish *.tgz --tag latest --registry https://registry.npmjs.org --access public"
+          echo "  npm publish *.tgz --tag latest --access public"
+          echo ""
+          echo "Note: Configure NPM_TOKEN secret for actual publishing"
+          echo "Note: Set NODE_AUTH_TOKEN in environment for authentication"
+
+      - name: Tag release
+        run: |
+          echo "Tagging release for @aureus/${{ matrix.package }}..."
+          echo "Version: ${{ github.event.inputs.version || 'auto' }}"
+          echo "SHA: ${{ github.sha }}"
+
+      - name: Verify publication
+        run: |
+          echo "Verifying package publication..."
+          echo "Example: npm view @aureus/${{ matrix.package }}@latest version"
+          sleep 5
+
+      - name: Notify publication
+        if: always()
+        run: |
+          echo "Package publication completed: ${{ job.status }}"
+          echo "Package: @aureus/${{ matrix.package }}"
+          echo "Status: ${{ job.status }}"
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: publish-production
+    if: failure()
+    
+    steps:
+      - name: Rollback packages
+        run: |
+          echo "Deployment failed! Initiating rollback procedure..."
+          echo "Example rollback commands:"
+          echo "  npm unpublish @aureus/package@version"
+          echo "  npm deprecate @aureus/package@version 'Rolled back due to deployment failure'"
+          echo "  npm dist-tag add @aureus/package@previous-version latest"

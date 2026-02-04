@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Click Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 50px;
+      background: #f0f0f0;
+    }
+    .test-button {
+      padding: 20px 40px;
+      font-size: 18px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    .test-button:hover {
+      background: #5568d3;
+    }
+    #output {
+      margin-top: 30px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      min-height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <h1>JavaScript Click Test</h1>
+  <p>If these buttons work, JavaScript is functioning correctly:</p>
+  
+  <button class="test-button" onclick="testFunction('Button 1')">Test Button 1</button>
+  <button class="test-button" onclick="testFunction('Button 2')">Test Button 2</button>
+  <button class="test-button" onclick="testFunction('Button 3')">Test Button 3</button>
+  
+  <div id="output"></div>
+  
+  <hr style="margin: 30px 0;">
+  
+  <h2>Direct Scenario Test</h2>
+  <button class="test-button" onclick="goToEndToEnd()">Go to End-to-End Demo</button>
+  
+  <script>
+    function testFunction(buttonName) {
+      const output = document.getElementById('output');
+      const time = new Date().toLocaleTimeString();
+      output.innerHTML += `<p><strong>${time}:</strong> ${buttonName} clicked successfully! ✅</p>`;
+      console.log(`${buttonName} clicked at ${time}`);
+    }
+    
+    function goToEndToEnd() {
+      // Add timestamp to bypass cache
+      window.location.href = '/end-to-end?t=' + Date.now();
+    }
+    
+    console.log('Test page loaded successfully');
+  </script>
+</body>
+</html>

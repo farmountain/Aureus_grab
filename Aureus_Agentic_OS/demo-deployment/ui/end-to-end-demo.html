@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>End-to-End Workflow Demo - Aureus Agentic OS</title>
+  <script src="/persona-utils.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .workflow-stage {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-left: 4px solid #667eea;
+    }
+
+    .workflow-stage h2 {
+      color: #667eea;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .workflow-stage.active {
+      border-left-color: #10b981;
+      background: #f0fdf4;
+    }
+
+    .workflow-stage.completed {
+      border-left-color: #10b981;
+      opacity: 0.7;
+    }
+
+    .workflow-stage.error {
+      border-left-color: #ef4444;
+      background: #fef2f2;
+    }
+
+    .stage-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #667eea;
+      color: white;
+      font-weight: bold;
+    }
+
+    .stage-content {
+      margin-left: 42px;
+    }
+
+    .stage-details {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 10px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .code-block {
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .code-block .keyword { color: #c792ea; }
+    .code-block .string { color: #c3e88d; }
+    .code-block .number { color: #f78c6c; }
+    .code-block .comment { color: #676e95; font-style: italic; }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .metric-card {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #1f2937;
+      margin-top: 5px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .btn-secondary {
+      background: #6b7280;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #4b5563;
+    }
+
+    .log-viewer {
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 15px;
+      border-radius: 6px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .log-entry {
+      margin-bottom: 5px;
+    }
+
+    .log-entry .timestamp {
+      color: #64748b;
+    }
+
+    .log-entry .level-info {
+      color: #3b82f6;
+    }
+
+    .log-entry .level-success {
+      color: #10b981;
+    }
+
+    .log-entry .level-warning {
+      color: #f59e0b;
+    }
+
+    .log-entry .level-error {
+      color: #ef4444;
+    }
+
+    .risk-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .risk-low {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .risk-medium {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .risk-high {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .risk-critical {
+      background: #fecaca;
+      color: #7f1d1d;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s ease;
+    }
+
+    .snapshot-list {
+      list-style: none;
+      margin-top: 10px;
+    }
+
+    .snapshot-item {
+      background: white;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      border-left: 3px solid #10b981;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .snapshot-item.rollback {
+      border-left-color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🏭 End-to-End Agent Factory Workflow</h1>
+      <p>Complete demonstration of agent creation, world model generation, reliable execution, risk management, and rollback</p>
+    </div>
+
+    <div class="content">
+      <!-- Scenario Selector -->
+      <div class="workflow-stage" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+        <h2 style="color: white;">
+          <span class="stage-number" style="background: white; color: #667eea;">🎯</span>
+          Choose Your Domain Scenario
+        </h2>
+        <div class="stage-content">
+          <p style="opacity: 0.95; margin-bottom: 20px;">Select a domain-specific workflow to see the complete agent lifecycle in action</p>
+          
+          <div class="metrics-grid">
+            <div class="metric-card" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #e5e7eb;" 
+                 onclick="selectScenario('warehouse'); return false;" 
+                 id="scenario-warehouse">
+              <h3 style="color: #667eea; margin-bottom: 10px;">🏭 Warehouse Robotics</h3>
+              <p style="font-size: 13px; line-height: 1.6; color: #6b7280;">Autonomous inventory management with navigation, obstacle avoidance, and safety protocols</p>
+              <div style="margin-top: 10px; font-size: 12px; color: #9ca3af;">
+                <strong>Risk:</strong> HIGH | <strong>Steps:</strong> 5
+              </div>
+            </div>
+            
+            <div class="metric-card" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #e5e7eb;" 
+                 onclick="selectScenario('banking'); return false;" 
+                 id="scenario-banking">
+              <h3 style="color: #10b981; margin-bottom: 10px;">🏦 Banking Operations</h3>
+              <p style="font-size: 13px; line-height: 1.6; color: #6b7280;">Fraud detection, credit reconciliation, and compliance validation with audit trail</p>
+              <div style="margin-top: 10px; font-size: 12px; color: #9ca3af;">
+                <strong>Risk:</strong> CRITICAL | <strong>Steps:</strong> 6
+              </div>
+            </div>
+            
+            <div class="metric-card" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #e5e7eb;" 
+                 onclick="selectScenario('sdlc'); return false;" 
+                 id="scenario-sdlc">
+              <h3 style="color: #3b82f6; margin-bottom: 10px;">💻 SDLC Automation</h3>
+              <p style="font-size: 13px; line-height: 1.6; color: #6b7280;">Code review, testing, deployment with quality gates and rollback capabilities</p>
+              <div style="margin-top: 10px; font-size: 12px; color: #9ca3af;">
+                <strong>Risk:</strong> MEDIUM | <strong>Steps:</strong> 7
+              </div>
+            </div>
+            
+            <div class="metric-card" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #e5e7eb;" 
+                 onclick="selectScenario('devops'); return false;" 
+                 id="scenario-devops">
+              <h3 style="color: #f59e0b; margin-bottom: 10px;">⚙️ DevOps Pipeline</h3>
+              <p style="font-size: 13px; line-height: 1.6; color: #6b7280;">Infrastructure provisioning, monitoring, incident response with disaster recovery</p>
+              <div style="margin-top: 10px; font-size: 12px; color: #9ca3af;">
+                <strong>Risk:</strong> HIGH | <strong>Steps:</strong> 6
+              </div>
+            </div>
+            
+            <div class="metric-card" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #e5e7eb;" 
+                 onclick="selectScenario('healthcare'); return false;" 
+                 id="scenario-healthcare">
+              <h3 style="color: #ef4444; margin-bottom: 10px;">🏥 Healthcare Workflow</h3>
+              <p style="font-size: 13px; line-height: 1.6; color: #6b7280;">Patient data analysis, diagnosis assistance with HIPAA compliance and data privacy</p>
+              <div style="margin-top: 10px; font-size: 12px; color: #9ca3af;">
+                <strong>Risk:</strong> CRITICAL | <strong>Steps:</strong> 5
+              </div>
+            </div>
+            
+            <div class="metric-card" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #e5e7eb;" 
+                 onclick="selectScenario('ecommerce'); return false;" 
+                 id="scenario-ecommerce">
+              <h3 style="color: #8b5cf6; margin-bottom: 10px;">🛒 E-Commerce</h3>
+              <p style="font-size: 13px; line-height: 1.6; color: #6b7280;">Inventory optimization, dynamic pricing, customer service with recommendation engine</p>
+              <div style="margin-top: 10px; font-size: 12px; color: #9ca3af;">
+                <strong>Risk:</strong> MEDIUM | <strong>Steps:</strong> 6
+              </div>
+            </div>
+            
+            <div class="metric-card" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #e5e7eb;" 
+                 onclick="selectScenario('kitchen_humanoid'); return false;" 
+                 id="scenario-kitchen_humanoid">
+              <h3 style="color: #ec4899; margin-bottom: 10px;">🍳 Kitchen Humanoid</h3>
+              <p style="font-size: 13px; line-height: 1.6; color: #6b7280;">Autonomous cooking robot with vision, force sensing, and food safety compliance</p>
+              <div style="margin-top: 10px; font-size: 12px; color: #9ca3af;">
+                <strong>Risk:</strong> HIGH | <strong>Steps:</strong> 7
+              </div>
+            </div>
+            
+            <div class="metric-card" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #e5e7eb;" 
+                 onclick="selectScenario('memrl_worldmodel'); return false;" 
+                 id="scenario-memrl_worldmodel">
+              <h3 style="color: #14b8a6; margin-bottom: 10px;">🧠 Zero-Shot MemRL</h3>
+              <p style="font-size: 13px; line-height: 1.6; color: #6b7280;">Self-learning PDDL world model with memory-weighted reinforcement learning</p>
+              <div style="margin-top: 10px; font-size: 12px; color: #9ca3af;">
+                <strong>Risk:</strong> CRITICAL | <strong>Steps:</strong> 8
+              </div>
+            </div>
+            
+            <div class="metric-card" style="cursor: pointer; transition: transform 0.2s; border: 2px solid #e5e7eb;" 
+                 onclick="selectScenario('digital_bi_employee'); return false;" 
+                 id="scenario-digital_bi_employee">
+              <h3 style="color: #06b6d4; margin-bottom: 10px;">📊 Digital BI Employee</h3>
+              <p style="font-size: 13px; line-height: 1.6; color: #6b7280;">Autonomous BI project management with dashboard design and stakeholder coordination</p>
+              <div style="margin-top: 10px; font-size: 12px; color: #9ca3af;">
+                <strong>Risk:</strong> MEDIUM | <strong>Steps:</strong> 9
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workflow Container - Hidden until scenario selected -->
+      <div id="workflow-container" style="display: none;">
+
+      <!-- Stage 1: Agent Factory -->
+      <div class="workflow-stage" id="stage1">
+        <h2>
+          <span class="stage-number">1</span>
+          Agent Factory - Blueprint Generation
+        </h2>
+        <div class="stage-content">
+          <p>Generate agent blueprint from natural language goals with automatic tool selection and policy assignment</p>
+          
+          <div class="stage-details">
+            <strong>Goal:</strong> "Warehouse robot for autonomous inventory management"<br>
+            <strong>Risk Profile:</strong> <span class="risk-badge risk-high">HIGH</span><br>
+            <strong>Domain:</strong> Robotics
+          </div>
+
+          <div class="code-block">
+<span class="keyword">const</span> request = {
+  goal: <span class="string">"Autonomous warehouse robot for inventory management"</span>,
+  riskProfile: <span class="string">"HIGH"</span>,
+  constraints: [
+    <span class="string">"Must operate within warehouse boundaries"</span>,
+    <span class="string">"Maximum speed: 2 m/s"</span>,
+    <span class="string">"Emergency stop on obstacle detection"</span>
+  ],
+  preferredTools: [<span class="string">"lidar"</span>, <span class="string">"motor-controller"</span>, <span class="string">"gripper"</span>]
+};
+
+<span class="keyword">const</span> blueprint = <span class="keyword">await</span> agentFactory.generate(request);
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-primary" onclick="runStage1()">Generate Agent Blueprint</button>
+          </div>
+
+          <div id="stage1-output"></div>
+        </div>
+      </div>
+
+      <!-- Stage 2: World Model Generation -->
+      <div class="workflow-stage" id="stage2">
+        <h2>
+          <span class="stage-number">2</span>
+          World Model Generation
+        </h2>
+        <div class="stage-content">
+          <p>Generate domain-specific world model with entities, relationships, and constraints</p>
+          
+          <div class="stage-details">
+            <strong>Domain:</strong> Warehouse Operations<br>
+            <strong>Entities:</strong> Robot, Item, Location, Zone<br>
+            <strong>Constraints:</strong> Geofencing, Speed limits, Safety zones
+          </div>
+
+          <div class="code-block">
+<span class="keyword">const</span> worldModel = <span class="keyword">await</span> worldModelBuilder.generate({
+  domain: <span class="string">"warehouse"</span>,
+  entities: [
+    { type: <span class="string">"Robot"</span>, attributes: [<span class="string">"position"</span>, <span class="string">"velocity"</span>, <span class="string">"battery"</span>] },
+    { type: <span class="string">"Item"</span>, attributes: [<span class="string">"sku"</span>, <span class="string">"weight"</span>, <span class="string">"location"</span>] },
+    { type: <span class="string">"Zone"</span>, attributes: [<span class="string">"boundaries"</span>, <span class="string">"safetyLevel"</span>] }
+  ],
+  constraints: [
+    { type: <span class="string">"geofence"</span>, rule: <span class="string">"robot.position WITHIN zone.boundaries"</span> },
+    { type: <span class="string">"speed"</span>, rule: <span class="string">"robot.velocity <= 2.0"</span> }
+  ]
+});
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-primary" onclick="runStage2()">Generate World Model</button>
+          </div>
+
+          <div id="stage2-output"></div>
+        </div>
+      </div>
+
+      <!-- Stage 3: Memory Engine Integration -->
+      <div class="workflow-stage" id="stage3">
+        <h2>
+          <span class="stage-number">3</span>
+          HipCortex Memory Engine Integration
+        </h2>
+        <div class="stage-content">
+          <p>Initialize memory system with tiered retention, provenance tracking, and snapshot capabilities</p>
+          
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">Memory Tiers</div>
+              <div class="metric-value">4</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Snapshot Points</div>
+              <div class="metric-value" id="snapshot-count">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Provenance Links</div>
+              <div class="metric-value" id="provenance-count">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Memory Entries</div>
+              <div class="metric-value" id="memory-entries">0</div>
+            </div>
+          </div>
+
+          <div class="code-block">
+<span class="keyword">const</span> memoryEngine = <span class="keyword">new</span> HipCortex({
+  tiers: [
+    { tier: <span class="string">"L0_SCRATCH"</span>, maxAge: <span class="number">300</span>, maxEntries: <span class="number">1000</span> },
+    { tier: <span class="string">"L1_RECENT"</span>, maxAge: <span class="number">86400</span>, maxEntries: <span class="number">10000</span> },
+    { tier: <span class="string">"L2_LONGTERM"</span>, maxAge: <span class="number">2592000</span> },
+    { tier: <span class="string">"L3_ARCHIVE"</span> }
+  ],
+  snapshotStrategy: <span class="string">"checkpoint"</span>
+});
+
+<span class="comment">// Create initial snapshot</span>
+<span class="keyword">const</span> snapshot = <span class="keyword">await</span> snapshotManager.createSnapshot(
+  workflowId, stepId, worldState, memoryEntries, <span class="keyword">true</span>
+);
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-primary" onclick="runStage3()">Initialize Memory Engine</button>
+          </div>
+
+          <div id="stage3-output"></div>
+        </div>
+      </div>
+
+      <!-- Stage 4: Reliable Workflow Execution -->
+      <div class="workflow-stage" id="stage4">
+        <h2>
+          <span class="stage-number">4</span>
+          Reliable Workflow Execution (CRV + Goal-Guard)
+        </h2>
+        <div class="stage-content">
+          <p>Execute workflow with Circuit Reasoning Validation and Goal-Guard policy enforcement</p>
+          
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">Workflow Status</div>
+              <div class="metric-value" id="workflow-status">IDLE</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Steps Completed</div>
+              <div class="metric-value" id="steps-completed">0/5</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">CRV Validations</div>
+              <div class="metric-value" id="crv-checks">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Policy Checks</div>
+              <div class="metric-value" id="policy-checks">0</div>
+            </div>
+          </div>
+
+          <div class="progress-bar">
+            <div class="progress-fill" id="workflow-progress" style="width: 0%"></div>
+          </div>
+
+          <div class="stage-details">
+            <strong>Workflow Steps:</strong>
+            <ol style="margin-top: 10px; margin-left: 20px; line-height: 2;">
+              <li>Initialize robot systems</li>
+              <li>Load navigation map</li>
+              <li>Navigate to pickup location</li>
+              <li>Pick up inventory item</li>
+              <li>Deliver to destination</li>
+            </ol>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-primary" onclick="runStage4()">Execute Workflow</button>
+            <button class="btn-secondary" onclick="pauseWorkflow()">Pause</button>
+            <button class="btn-danger" onclick="injectFailure()">Inject Failure</button>
+          </div>
+
+          <div style="margin-top: 20px;">
+            <h3 style="margin-bottom: 10px;">Live Execution Log</h3>
+            <div class="log-viewer" id="execution-log">
+              <div class="log-entry">
+                <span class="timestamp">[00:00:00]</span>
+                <span class="level-info">[INFO]</span>
+                Waiting for workflow execution...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 5: Risk-Tiered Actions -->
+      <div class="workflow-stage" id="stage5">
+        <h2>
+          <span class="stage-number">5</span>
+          Risk-Tiered Action Management
+        </h2>
+        <div class="stage-content">
+          <p>Actions are automatically classified and require appropriate approvals based on risk tier</p>
+          
+          <div class="stage-details">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #f3f4f6; text-align: left;">
+                  <th style="padding: 10px;">Action</th>
+                  <th style="padding: 10px;">Risk Tier</th>
+                  <th style="padding: 10px;">Approval Required</th>
+                  <th style="padding: 10px;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="risk-actions">
+                <tr>
+                  <td style="padding: 10px;">Read sensor data</td>
+                  <td style="padding: 10px;"><span class="risk-badge risk-low">LOW</span></td>
+                  <td style="padding: 10px;">❌ No</td>
+                  <td style="padding: 10px;">✅ Approved</td>
+                </tr>
+                <tr style="background: #f9fafb;">
+                  <td style="padding: 10px;">Move to location</td>
+                  <td style="padding: 10px;"><span class="risk-badge risk-medium">MEDIUM</span></td>
+                  <td style="padding: 10px;">⚠️ Policy Check</td>
+                  <td style="padding: 10px;">⏳ Validating...</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px;">Pick up item</td>
+                  <td style="padding: 10px;"><span class="risk-badge risk-high">HIGH</span></td>
+                  <td style="padding: 10px;">✅ Required</td>
+                  <td style="padding: 10px;">⏳ Pending</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-success" onclick="approveHighRisk()">Approve High-Risk Action</button>
+            <button class="btn-danger" onclick="rejectHighRisk()">Reject High-Risk Action</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 6: Snapshot & Rollback -->
+      <div class="workflow-stage" id="stage6">
+        <h2>
+          <span class="stage-number">6</span>
+          Snapshot Management & Rollback
+        </h2>
+        <div class="stage-content">
+          <p>Automatic snapshot creation at each workflow step with Merkle-tree verification and one-click rollback</p>
+          
+          <div class="stage-details">
+            <h3 style="margin-bottom: 10px;">Snapshot History</h3>
+            <ul class="snapshot-list" id="snapshot-list">
+              <li class="snapshot-item">
+                <div>
+                  <strong>Snapshot #0</strong> - Initial State<br>
+                  <small>Merkle Root: e3b0c442...98fc1c14</small>
+                </div>
+                <button class="btn-secondary btn-sm" disabled>Current</button>
+              </li>
+            </ul>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-danger" onclick="triggerRollback()">🔄 Trigger Rollback</button>
+            <button class="btn-primary" onclick="createManualSnapshot()">📸 Create Manual Snapshot</button>
+          </div>
+
+          <div id="rollback-output"></div>
+        </div>
+      </div>
+
+      <!-- Stage 7: Observability -->
+      <div class="workflow-stage" id="stage7">
+        <h2>
+          <span class="stage-number">7</span>
+          Observability & Monitoring
+        </h2>
+        <div class="stage-content">
+          <p>Full distributed tracing with OpenTelemetry, Prometheus metrics, and audit logs</p>
+          
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-label">Traces Collected</div>
+              <div class="metric-value" id="trace-count">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Metrics Exported</div>
+              <div class="metric-value" id="metrics-count">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Audit Events</div>
+              <div class="metric-value" id="audit-count">0</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Avg Latency</div>
+              <div class="metric-value" id="avg-latency">0ms</div>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <a href="http://localhost:9090" target="_blank"><button class="btn-primary">Open Prometheus</button></a>
+            <a href="http://localhost:3001" target="_blank"><button class="btn-primary">Open Grafana</button></a>
+            <button class="btn-secondary" onclick="exportTraces()">Export Traces</button>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- End workflow-container -->
+
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let workflowRunning = false;
+    let currentStep = 0;
+    let snapshotCount = 1;
+    let memoryEntries = 0;
+    let crvChecks = 0;
+    let policyChecks = 0;
+    let auditCount = 0;
+    let currentScenario = null;
+
+    console.log('Script loaded successfully');
+
+    // Test function
+    window.testClick = function() {
+      console.log('Test click works!');
+      alert('JavaScript is working!');
+    };
+
+    const scenarios = {
+      warehouse: {
+        name: 'Warehouse Robotics',
+        goal: 'Autonomous warehouse robot for inventory management',
+        riskProfile: 'HIGH',
+        domain: 'Robotics',
+        tools: ['lidar-scanner', 'motor-controller', 'gripper', 'camera-vision'],
+        policies: ['geofencing', 'speed-limit', 'emergency-stop', 'battery-monitor', 'collision-avoid', 'human-proximity'],
+        worldModelEntities: ['Robot', 'Item', 'Zone', 'Location'],
+        steps: [
+          'Initialize robot systems',
+          'Load navigation map',
+          'Navigate to pickup location',
+          'Pick up inventory item',
+          'Deliver to destination'
+        ],
+        constraints: [
+          'Must operate within warehouse boundaries',
+          'Maximum speed: 2 m/s',
+          'Emergency stop on obstacle detection'
+        ]
+      },
+      banking: {
+        name: 'Banking Operations',
+        goal: 'Fraud detection and credit reconciliation system',
+        riskProfile: 'CRITICAL',
+        domain: 'Finance',
+        tools: ['transaction-analyzer', 'fraud-detector', 'compliance-checker', 'reporting-engine', 'audit-logger'],
+        policies: ['pci-dss-compliance', 'data-encryption', 'access-control', 'audit-trail', 'transaction-limits', 'dual-authorization'],
+        worldModelEntities: ['Transaction', 'Account', 'Customer', 'Alert', 'ComplianceRule'],
+        steps: [
+          'Ingest transaction batch',
+          'Run fraud detection models',
+          'Flag suspicious transactions',
+          'Perform credit reconciliation',
+          'Generate compliance report',
+          'Archive audit logs'
+        ],
+        constraints: [
+          'PCI-DSS compliance required',
+          'Transaction amounts must balance',
+          'Dual authorization for high-value transfers',
+          'All actions must be auditable'
+        ]
+      },
+      sdlc: {
+        name: 'SDLC Automation',
+        goal: 'Automated code review, testing, and deployment pipeline',
+        riskProfile: 'MEDIUM',
+        domain: 'Software Development',
+        tools: ['code-analyzer', 'test-runner', 'security-scanner', 'build-system', 'deployment-manager', 'rollback-controller'],
+        policies: ['code-quality-gate', 'security-scan-required', 'test-coverage-minimum', 'deployment-approval', 'rollback-ready'],
+        worldModelEntities: ['CodeBase', 'TestSuite', 'Build', 'Environment', 'Deployment'],
+        steps: [
+          'Clone repository',
+          'Run static code analysis',
+          'Execute test suite',
+          'Perform security scan',
+          'Build artifacts',
+          'Deploy to staging',
+          'Run smoke tests'
+        ],
+        constraints: [
+          'Code coverage must be >= 80%',
+          'No critical security vulnerabilities',
+          'All tests must pass',
+          'Deployment requires approval'
+        ]
+      },
+      devops: {
+        name: 'DevOps Pipeline',
+        goal: 'Infrastructure provisioning and incident response automation',
+        riskProfile: 'HIGH',
+        domain: 'DevOps',
+        tools: ['terraform', 'ansible', 'prometheus', 'grafana', 'pagerduty', 'kubectl', 'helm'],
+        policies: ['infrastructure-as-code', 'monitoring-required', 'backup-before-change', 'incident-escalation', 'disaster-recovery'],
+        worldModelEntities: ['Infrastructure', 'Service', 'Alert', 'Incident', 'Backup'],
+        steps: [
+          'Provision infrastructure',
+          'Deploy services',
+          'Configure monitoring',
+          'Detect anomaly',
+          'Trigger incident response',
+          'Execute rollback'
+        ],
+        constraints: [
+          'Backup before infrastructure changes',
+          'Monitoring must be active',
+          'Incident response time < 5 minutes',
+          'Rollback plan required'
+        ]
+      },
+      healthcare: {
+        name: 'Healthcare Workflow',
+        goal: 'Patient data analysis and diagnosis assistance',
+        riskProfile: 'CRITICAL',
+        domain: 'Healthcare',
+        tools: ['ehr-reader', 'diagnosis-assistant', 'lab-analyzer', 'prescription-validator', 'hipaa-compliance-checker'],
+        policies: ['hipaa-compliance', 'phi-encryption', 'access-logging', 'patient-consent', 'data-retention'],
+        worldModelEntities: ['Patient', 'Diagnosis', 'LabResult', 'Prescription', 'AuditLog'],
+        steps: [
+          'Retrieve patient records',
+          'Analyze medical history',
+          'Process lab results',
+          'Generate diagnosis suggestions',
+          'Validate prescriptions'
+        ],
+        constraints: [
+          'HIPAA compliance mandatory',
+          'PHI data must be encrypted',
+          'Patient consent required',
+          'All access must be logged'
+        ]
+      },
+      ecommerce: {
+        name: 'E-Commerce Operations',
+        goal: 'Inventory optimization and dynamic pricing engine',
+        riskProfile: 'MEDIUM',
+        domain: 'E-Commerce',
+        tools: ['inventory-tracker', 'pricing-engine', 'recommendation-system', 'order-processor', 'fraud-detector'],
+        policies: ['inventory-minimum', 'pricing-rules', 'customer-protection', 'payment-security'],
+        worldModelEntities: ['Product', 'Order', 'Customer', 'Inventory', 'Price'],
+        steps: [
+          'Analyze inventory levels',
+          'Calculate demand forecast',
+          'Optimize pricing strategy',
+          'Generate product recommendations',
+          'Process incoming orders',
+          'Update inventory'
+        ],
+        constraints: [
+          'Inventory must not go negative',
+          'Price changes within ±20%',
+          'Order processing time < 2 seconds',
+          'Fraud detection required'
+        ]
+      },
+      kitchen_humanoid: {
+        name: 'Kitchen Humanoid Robot',
+        goal: 'Autonomous cooking and kitchen task execution',
+        riskProfile: 'HIGH',
+        domain: 'Humanoid Robotics',
+        tools: ['vision-system', 'force-sensor', 'temperature-monitor', 'utensil-controller', 'recipe-parser', 'safety-monitor'],
+        policies: ['food-safety', 'temperature-control', 'human-proximity-halt', 'emergency-shutoff', 'ingredient-verification', 'hygiene-compliance'],
+        worldModelEntities: ['Ingredient', 'Utensil', 'Appliance', 'Recipe', 'WorkSurface', 'Human'],
+        steps: [
+          'Parse recipe and identify ingredients',
+          'Verify ingredient availability',
+          'Retrieve utensils and tools',
+          'Execute cooking steps',
+          'Monitor temperature and timing',
+          'Plate and serve food',
+          'Clean workspace'
+        ],
+        constraints: [
+          'Food temperature safety ranges (4°C-60°C danger zone)',
+          'Human within 1m triggers pause',
+          'Maximum force on utensils: 50N',
+          'Cross-contamination prevention required',
+          'Fire detection triggers emergency stop'
+        ]
+      },
+      memrl_worldmodel: {
+        name: 'Zero-Shot MemRL World Model',
+        goal: 'Self-learning world model with memory-weighted reinforcement learning',
+        riskProfile: 'CRITICAL',
+        domain: 'Advanced AI/ML',
+        tools: ['pddl-planner', 'memrl-engine', 'experience-replay', 'world-model-updater', 'constraint-learner', 'uncertainty-estimator'],
+        policies: ['exploration-safety', 'experience-weighting', 'model-validation', 'rollback-on-divergence', 'human-in-loop', 'uncertainty-threshold'],
+        worldModelEntities: ['State', 'Action', 'Transition', 'Reward', 'Experience', 'PDDLPredicate', 'Uncertainty'],
+        steps: [
+          'Generate PDDL domain from observations',
+          'Sample zero-shot exploration policy',
+          'Execute actions and collect experiences',
+          'Weight experiences by uncertainty reduction',
+          'Update world model with weighted MemRL',
+          'Validate model against constraints',
+          'Plan with updated PDDL model',
+          'Repeat until convergence'
+        ],
+        constraints: [
+          'Zero prior training data required',
+          'Model divergence triggers rollback',
+          'Uncertainty > 0.8 requires human review',
+          'Experience weights decay exponentially',
+          'PDDL predicates must be grounded',
+          'Safety constraints cannot be violated during exploration'
+        ]
+      },
+      digital_bi_employee: {
+        name: 'Digital BI Project Manager',
+        goal: 'Autonomous business intelligence project planning and execution',
+        riskProfile: 'MEDIUM',
+        domain: 'Enterprise Automation',
+        tools: ['requirement-analyzer', 'resource-allocator', 'dashboard-designer', 'sql-generator', 'stakeholder-communicator', 'progress-tracker'],
+        policies: ['data-governance', 'budget-approval', 'stakeholder-signoff', 'change-management', 'quality-gates', 'documentation-required'],
+        worldModelEntities: ['Project', 'Requirement', 'Stakeholder', 'DataSource', 'Dashboard', 'KPI', 'Deliverable'],
+        steps: [
+          'Gather requirements from stakeholders',
+          'Analyze data sources and schemas',
+          'Design dashboard mockups',
+          'Generate SQL queries and ETL pipelines',
+          'Build interactive visualizations',
+          'Validate KPIs with stakeholders',
+          'Deploy to production',
+          'Generate documentation',
+          'Schedule automated reports'
+        ],
+        constraints: [
+          'Budget approval required for >$10k',
+          'Stakeholder sign-off on all deliverables',
+          'Data access governed by RBAC',
+          'Dashboard response time < 3 seconds',
+          'All changes tracked in audit log',
+          'Documentation must be complete before deployment'
+        ]
+      }
+    };
+
+    function selectScenario(scenarioId) {
+      console.log('selectScenario called with:', scenarioId);
+      
+      if (!scenarios[scenarioId]) {
+        console.error('Scenario not found:', scenarioId);
+        alert('Scenario not found: ' + scenarioId);
+        return;
+      }
+      
+      currentScenario = scenarios[scenarioId];
+      console.log('Selected scenario:', currentScenario);
+      
+      // Hide scenario selector
+      const scenarioSelector = document.querySelector('.workflow-stage');
+      console.log('Scenario selector found:', !!scenarioSelector);
+      if (scenarioSelector) {
+        scenarioSelector.style.display = 'none';
+      }
+      
+      // Show workflow container
+      const container = document.getElementById('workflow-container');
+      console.log('Workflow container found:', !!container);
+      if (container) {
+        container.style.display = 'block';
+      }
+      
+      // Show all stages
+      for (let i = 1; i <= 7; i++) {
+        const stage = document.getElementById(`stage${i}`);
+        console.log(`Stage ${i} found:`, !!stage);
+        if (stage) {
+          stage.style.display = 'block';
+        }
+      }
+      
+      // Update stage 1 with scenario details
+      console.log('Updating stages...');
+      updateStage1WithScenario();
+      updateStage2WithScenario();
+      updateStage4WithScenario();
+      
+      // Scroll to stage 1
+      setTimeout(() => {
+        const stage1 = document.getElementById('stage1');
+        if (stage1) {
+          stage1.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+      
+      addLog('info', `Scenario selected: ${currentScenario.name}`);
+      
+      // Highlight selected scenario
+      document.querySelectorAll('.metric-card').forEach(card => {
+        card.style.border = '1px solid #e5e7eb';
+      });
+      const selectedCard = document.getElementById(`scenario-${scenarioId}`);
+      if (selectedCard) {
+        selectedCard.style.border = '3px solid #667eea';
+      }
+      
+      console.log('Scenario selection complete');
+    }
+
+    // Make selectScenario globally accessible
+    window.selectScenario = selectScenario;
+
+    // Debug: Test if function is accessible
+    console.log('window.selectScenario is:', typeof window.selectScenario);
+    console.log('All scenario cards:', document.querySelectorAll('.metric-card').length);
+
+    // Add direct event listeners as backup
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, adding click listeners...');
+      
+      const cards = document.querySelectorAll('.metric-card');
+      console.log('Found metric cards:', cards.length);
+      
+      cards.forEach((card, index) => {
+        console.log('Card', index, 'ID:', card.id);
+        card.addEventListener('click', function(e) {
+          console.log('Card clicked directly!', card.id);
+          const scenarioId = card.id.replace('scenario-', '');
+          console.log('Extracted scenario ID:', scenarioId);
+          selectScenario(scenarioId);
+        });
+      });
+    });
+
+    function updateStage1WithScenario() {
+      const stage = document.getElementById('stage1');
+      stage.innerHTML = `
+        <h2>
+          <span class="stage-number">1</span>
+          Agent Factory - Blueprint Generation
+        </h2>
+        <div class="stage-content">
+          <p>Generate agent blueprint from natural language goals with automatic tool selection and policy assignment</p>
+          
+          <div class="stage-details">
+            <strong>Scenario:</strong> ${currentScenario.name}<br>
+            <strong>Goal:</strong> "${currentScenario.goal}"<br>
+            <strong>Risk Profile:</strong> <span class="risk-badge risk-${currentScenario.riskProfile.toLowerCase()}">${currentScenario.riskProfile}</span><br>
+            <strong>Domain:</strong> ${currentScenario.domain}
+          </div>
+
+          <div class="code-block">
+<span class="keyword">const</span> request = {
+  goal: <span class="string">"${currentScenario.goal}"</span>,
+  riskProfile: <span class="string">"${currentScenario.riskProfile}"</span>,
+  domain: <span class="string">"${currentScenario.domain}"</span>,
+  constraints: [
+    ${currentScenario.constraints.map(c => `<span class="string">"${c}"</span>`).join(',\n    ')}
+  ],
+  preferredTools: [${currentScenario.tools.slice(0, 4).map(t => `<span class="string">"${t}"</span>`).join(', ')}]
+};
+
+<span class="keyword">const</span> blueprint = <span class="keyword">await</span> agentFactory.generate(request);
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-primary" onclick="runStage1()">Generate Agent Blueprint</button>
+          </div>
+
+          <div id="stage1-output"></div>
+        </div>
+      `;
+    }
+
+    function updateStage2WithScenario() {
+      const stage = document.getElementById('stage2');
+      stage.innerHTML = `
+        <h2>
+          <span class="stage-number">2</span>
+          World Model Generation
+        </h2>
+        <div class="stage-content">
+          <p>Generate domain-specific world model with entities, relationships, and constraints</p>
+          
+          <div class="stage-details">
+            <strong>Domain:</strong> ${currentScenario.domain}<br>
+            <strong>Entities:</strong> ${currentScenario.worldModelEntities.join(', ')}<br>
+            <strong>Constraints:</strong> ${currentScenario.constraints.length} defined
+          </div>
+
+          <div class="code-block">
+<span class="keyword">const</span> worldModel = <span class="keyword">await</span> worldModelBuilder.generate({
+  domain: <span class="string">"${currentScenario.domain.toLowerCase()}"</span>,
+  entities: [
+    ${currentScenario.worldModelEntities.map(e => `{ type: <span class="string">"${e}"</span> }`).join(',\n    ')}
+  ],
+  constraints: [
+    ${currentScenario.constraints.slice(0, 2).map(c => `<span class="string">"${c}"</span>`).join(',\n    ')}
+  ]
+});
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-primary" onclick="runStage2()">Generate World Model</button>
+          </div>
+
+          <div id="stage2-output"></div>
+        </div>
+      `;
+    }
+
+    function updateStage4WithScenario() {
+      const stepsHtml = currentScenario.steps.map((step, i) => `<li>${step}</li>`).join('');
+      
+      const stage = document.getElementById('stage4');
+      const existingContent = stage.innerHTML;
+      const detailsSection = `
+            <strong>Workflow Steps:</strong>
+            <ol style="margin-top: 10px; margin-left: 20px; line-height: 2;">
+              ${stepsHtml}
+            </ol>
+      `;
+      
+      // Update the stage-details section
+      stage.innerHTML = existingContent.replace(
+        /<strong>Workflow Steps:<\/strong>[\s\S]*?<\/ol>/,
+        detailsSection
+      );
+    }
+
+    function addLog(level, message) {
+      const logViewer = document.getElementById('execution-log');
+      const timestamp = new Date().toTimeString().split(' ')[0];
+      const logEntry = document.createElement('div');
+      logEntry.className = 'log-entry';
+      logEntry.innerHTML = `
+        <span class="timestamp">[${timestamp}]</span>
+        <span class="level-${level}">[${level.toUpperCase()}]</span>
+        ${message}
+      `;
+      logViewer.appendChild(logEntry);
+      logViewer.scrollTop = logViewer.scrollHeight;
+      
+      auditCount++;
+      document.getElementById('audit-count').textContent = auditCount;
+    }
+
+    async function runStage1() {
+      if (!currentScenario) {
+        alert('Please select a scenario first');
+        return;
+      }
+      
+      const stage = document.getElementById('stage1');
+      stage.classList.add('active');
+      addLog('info', 'Starting agent blueprint generation...');
+      
+      await sleep(1000);
+      addLog('info', `Analyzing goal: "${currentScenario.goal}"`);
+      await sleep(800);
+      addLog('info', `Risk profile: ${currentScenario.riskProfile} - Additional ${currentScenario.riskProfile === 'CRITICAL' ? 'critical' : ''} safety policies required`);
+      await sleep(800);
+      addLog('info', `Selecting tools: ${currentScenario.tools.slice(0, 4).join(', ')}`);
+      await sleep(1000);
+      addLog('success', 'Agent blueprint generated successfully');
+      
+      const output = document.getElementById('stage1-output');
+      output.innerHTML = `
+        <div class="stage-details" style="margin-top: 15px; background: #f0fdf4; border-left: 3px solid #10b981;">
+          <strong>✅ Blueprint Generated</strong><br>
+          <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+            <li>Agent ID: ${currentScenario.domain.toLowerCase()}-agent-001</li>
+            <li>Tools: ${currentScenario.tools.length} (${currentScenario.tools.slice(0, 3).join(', ')}...)</li>
+            <li>Policies: ${currentScenario.policies.length} (${currentScenario.policies.slice(0, 3).join(', ')}...)</li>
+            <li>Risk Tier: ${currentScenario.riskProfile}</li>
+          </ul>
+        </div>
+      `;
+      
+      stage.classList.remove('active');
+      stage.classList.add('completed');
+    }
+
+    async function runStage2() {
+      if (!currentScenario) return;
+      
+      const stage = document.getElementById('stage2');
+      stage.classList.add('active');
+      addLog('info', `Generating world model for ${currentScenario.domain} domain...`);
+      
+      await sleep(1000);
+      for (const entity of currentScenario.worldModelEntities) {
+        addLog('info', `Creating entity: ${entity}`);
+        await sleep(600);
+      }
+      
+      addLog('info', `Defining ${currentScenario.constraints.length} constraints...`);
+      await sleep(1000);
+      addLog('success', `World model generated with ${currentScenario.worldModelEntities.length} entity types and ${currentScenario.constraints.length} constraints`);
+      
+      const output = document.getElementById('stage2-output');
+      output.innerHTML = `
+        <div class="stage-details" style="margin-top: 15px; background: #f0fdf4; border-left: 3px solid #10b981;">
+          <strong>✅ World Model Created</strong><br>
+          <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+            <li>Entities: ${currentScenario.worldModelEntities.length} types (${currentScenario.worldModelEntities.join(', ')})</li>
+            <li>Relationships: ${Math.floor(currentScenario.worldModelEntities.length * 1.5)} defined</li>
+            <li>Hard Constraints: ${currentScenario.constraints.length}</li>
+            <li>Soft Constraints: ${Math.floor(currentScenario.constraints.length / 2)}
+          <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+            <li>Entities: 4 types (Robot, Item, Zone, Location)</li>
+            <li>Relationships: 6 (located_in, contains, adjacent_to, assigned_to, restricted_from, requires)</li>
+            <li>Hard Constraints: 5 (geofence, speed_limit, battery_min, weight_max, zone_restriction)</li>
+            <li>Soft Constraints: 3 (efficiency_preference, path_optimization, energy_conservation)</li>
+          </ul>
+        </div>
+      `;
+      
+      stage.classList.remove('active');
+      stage.classList.add('completed');
+      document.getElementById('stage3').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function runStage3() {
+      const stage = document.getElementById('stage3');
+      stage.classList.add('active');
+      addLog('info', 'Initializing HipCortex memory engine...');
+      
+      await sleep(800);
+      addLog('info', 'Setting up 4-tier memory hierarchy (L0_SCRATCH, L1_RECENT, L2_LONGTERM, L3_ARCHIVE)');
+      await sleep(1000);
+      addLog('info', 'Creating initial snapshot with Merkle tree verification');
+      await sleep(800);
+      
+      snapshotCount = 1;
+      memoryEntries = 15;
+      document.getElementById('snapshot-count').textContent = snapshotCount;
+      document.getElementById('provenance-count').textContent = 8;
+      document.getElementById('memory-entries').textContent = memoryEntries;
+      
+      addLog('success', 'Memory engine initialized - Snapshot #1 created (Merkle: a7f3c98e...)');
+      addLog('info', 'Provenance tracking enabled for all actions');
+      
+      const output = document.getElementById('stage3-output');
+      output.innerHTML = `
+        <div class="stage-details" style="margin-top: 15px; background: #f0fdf4; border-left: 3px solid #10b981;">
+          <strong>✅ Memory Engine Active</strong><br>
+          <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+            <li>Initial snapshot created and verified</li>
+            <li>Retention policies configured for all tiers</li>
+            <li>Provenance chain initialized</li>
+            <li>Snapshot interval: Every workflow step</li>
+          </ul>
+        </div>
+      `;
+      
+      stage.classList.remove('active');
+      stage.classList.add('completed');
+      document.getElementById('stage4').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function runStage4() {
+      if (workflowRunning || !currentScenario) return;
+      
+      const stage = document.getElementById('stage4');
+      stage.classList.add('active');
+      workflowRunning = true;
+      currentStep = 0;
+      
+      document.getElementById('workflow-status').textContent = 'RUNNING';
+      addLog('info', 'Starting workflow execution...');
+      
+      const steps = currentScenario.steps;
+      const totalSteps = steps.length;
+      
+      for (let i = 0; i < totalSteps; i++) {
+        if (!workflowRunning) {
+          addLog('warning', 'Workflow paused by user');
+          break;
+        }
+        
+        currentStep = i + 1;
+        document.getElementById('steps-completed').textContent = `${currentStep}/${totalSteps}`;
+        document.getElementById('workflow-progress').style.width = `${(currentStep / totalSteps) * 100}%`;
+        
+        addLog('info', `Step ${currentStep}: ${steps[i]}`);
+        await sleep(500);
+        
+        // CRV validation
+        crvChecks++;
+        document.getElementById('crv-checks').textContent = crvChecks;
+        addLog('info', `CRV validation #${crvChecks}: Checking constraints...`);
+        await sleep(400);
+        addLog('success', 'CRV validation passed');
+        
+        // Policy check
+        policyChecks++;
+        document.getElementById('policy-checks').textContent = policyChecks;
+        addLog('info', `Goal-Guard policy check #${policyChecks}: Evaluating safety rules...`);
+        await sleep(400);
+        addLog('success', 'Policy check passed');
+        
+        // Create snapshot
+        snapshotCount++;
+        document.getElementById('snapshot-count').textContent = snapshotCount;
+        addLog('info', `Creating snapshot #${snapshotCount}...`);
+        await sleep(300);
+        addLog('success', `Snapshot #${snapshotCount} created and verified`);
+        
+        // Add to snapshot list
+        const snapshotList = document.getElementById('snapshot-list');
+        const snapshotItem = document.createElement('li');
+        snapshotItem.className = 'snapshot-item';
+        snapshotItem.innerHTML = `
+          <div>
+            <strong>Snapshot #${snapshotCount - 1}</strong> - After ${steps[i]}<br>
+            <small>Merkle Root: ${generateMockHash()}</small>
+          </div>
+          <button class="btn-secondary btn-sm" onclick="rollbackToSnapshot(${snapshotCount - 1})">Rollback</button>
+        `;
+        snapshotList.appendChild(snapshotItem);
+        
+        // Memory update
+        memoryEntries += Math.floor(Math.random() * 5) + 3;
+        document.getElementById('memory-entries').textContent = memoryEntries;
+        
+        await sleep(1500);
+        addLog('success', `Step ${currentStep} completed`);
+      }
+      
+      if (currentStep === 5) {
+        document.getElementById('workflow-status').textContent = 'COMPLETED';
+        addLog('success', '🎉 Workflow completed successfully!');
+        stage.classList.remove('active');
+        stage.classList.add('completed');
+        document.getElementotalStepsById('stage5').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function pauseWorkflow() {
+      workflowRunning = false;
+      document.getElementById('workflow-status').textContent = 'PAUSED';
+      addLog('warning', 'Workflow paused');
+    }
+
+    async function injectFailure() {
+      addLog('error', '⚠️ Simulating failure: Motor controller timeout');
+      document.getElementById('workflow-status').textContent = 'ERROR';
+      await sleep(500);
+      addLog('warning', 'Attempting automatic recovery...');
+      await sleep(800);
+      addLog('info', 'Recovery failed - manual rollback required');
+      
+      const stage = document.getElementById('stage4');
+      stage.classList.remove('active');
+      stage.classList.add('error');
+      
+      document.getElementById('stage6').classList.add('active');
+      document.getElementById('stage6').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function approveHighRisk() {
+      addLog('success', 'High-risk action approved by administrator');
+      addLog('info', 'Proceeding with pick up item action...');
+    }
+
+    async function rejectHighRisk() {
+      addLog('warning', 'High-risk action rejected by administrator');
+      addLog('info', 'Workflow halted - awaiting alternative action plan');
+    }
+
+    async function triggerRollback() {
+      const stage = document.getElementById('stage6');
+      stage.classList.add('active');
+      
+      addLog('warning', '🔄 Rollback initiated...');
+      await sleep(800);
+      addLog('info', 'Verifying snapshot integrity...');
+      await sleep(600);
+      addLog('success', 'Snapshot verified - Merkle tree valid');
+      await sleep(500);
+      addLog('info', 'Rolling back world state...');
+      await sleep(800);
+      addLog('success', 'World state restored');
+      await sleep(500);
+      addLog('info', 'Rolling back memory entries...');
+      await sleep(600);
+      addLog('success', 'Memory state restored');
+      await sleep(500);
+      addLog('info', 'Rolling back workflow state...');
+      await sleep(700);
+      addLog('success', '✅ Rollback completed successfully');
+      
+      currentStep = Math.max(0, currentStep - 2);
+      document.getElementById('steps-completed').textContent = `${currentStep}/5`;
+      document.getElementById('workflow-progress').style.width = `${(currentStep / 5) * 100}%`;
+      document.getElementById('workflow-status').textContent = 'ROLLED_BACK';
+      
+      const output = document.getElementById('rollback-output');
+      output.innerHTML = `
+        <div class="stage-details" style="margin-top: 15px; background: #fef3c7; border-left: 3px solid #f59e0b;">
+          <strong>⚠️ System Rolled Back</strong><br>
+          <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+            <li>Rolled back 2 workflow steps</li>
+            <li>World state restored to snapshot #${snapshotCount - 2}</li>
+            <li>12 memory entries reverted</li>
+            <li>System ready for retry</li>
+          </ul>
+        </div>
+      `;
+      
+      stage.classList.remove('active');
+      stage.classList.add('completed');
+    }
+
+    async function createManualSnapshot() {
+      snapshotCount++;
+      document.getElementById('snapshot-count').textContent = snapshotCount;
+      addLog('info', `Creating manual snapshot #${snapshotCount}...`);
+      await sleep(500);
+      addLog('success', `Manual snapshot #${snapshotCount} created`);
+      
+      const snapshotList = document.getElementById('snapshot-list');
+      const snapshotItem = document.createElement('li');
+      snapshotItem.className = 'snapshot-item';
+      snapshotItem.innerHTML = `
+        <div>
+          <strong>Snapshot #${snapshotCount - 1}</strong> - Manual Checkpoint<br>
+          <small>Merkle Root: ${generateMockHash()}</small>
+        </div>
+        <button class="btn-secondary btn-sm" onclick="rollbackToSnapshot(${snapshotCount - 1})">Rollback</button>
+      `;
+      snapshotList.appendChild(snapshotItem);
+    }
+
+    function rollbackToSnapshot(snapshotId) {
+      addLog('info', `Rolling back to snapshot #${snapshotId}...`);
+      setTimeout(() => {
+        addLog('success', `Rolled back to snapshot #${snapshotId}`);
+      }, 1000);
+    }
+
+    function exportTraces() {
+      addLog('info', 'Exporting OpenTelemetry traces...');
+      setTimeout(() => {
+        addLog('success', 'Traces exported to traces.json');
+        alert('Traces exported successfully!\n\nIn production, traces would be sent to:\n- Jaeger\n- Zipkin\n- Honeycomb\n- Datadog');
+      }, 800);
+    }
+
+    function generateMockHash() {
+      const chars = '0123456789abcdef';
+      let hash = '';
+      for (let i = 0; i < 16; i++) {
+        hash += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return hash;
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Simulated metrics updates
+    setInterval(() => {
+      if (workflowRunning) {
+        const traceCount = parseInt(document.getElementById('trace-count').textContent) + 1;
+        document.getElementById('trace-count').textContent = traceCount;
+        
+        const metricsCount = parseInt(document.getElementById('metrics-count').textContent) + 2;
+        document.getElementById('metrics-count').textContent = metricsCount;
+        
+        const latency = Math.floor(Math.random() * 50) + 10;
+        document.getElementById('avg-latency').textContent = latency + 'ms';
+      }
+    }, 2000);
+
+    // Initialize persona features
+    window.addEventListener('DOMContentLoaded', function() {
+      if (typeof personaManager !== 'undefined') {
+        addPersonaBadge();
+        
+        // Check if user has permission to run workflows
+        if (!personaManager.hasPermission('runWorkflows')) {
+          const runButtons = document.querySelectorAll('button[onclick*="runStage"]');
+          runButtons.forEach(btn => {
+            const originalOnclick = btn.onclick;
+            btn.onclick = function(e) {
+              e.preventDefault();
+              showPermissionWarning('run workflows');
+              return false;
+            };
+          });
+        }
+
+        // Restrict high-risk approvals
+        if (!personaManager.hasPermission('approveHighRisk')) {
+          const approveBtn = document.querySelector('button[onclick="approveHighRisk()"]');
+          if (approveBtn) {
+            approveBtn.onclick = function(e) {
+              e.preventDefault();
+              showPermissionWarning('approve high-risk actions');
+              return false;
+            };
+          }
+        }
+
+        // Restrict rollback for non-devops/admin
+        if (!personaManager.hasPermission('manageSnapshots')) {
+          const rollbackBtns = document.querySelectorAll('button[onclick*="rollback"]');
+          rollbackBtns.forEach(btn => {
+            const originalOnclick = btn.onclick;
+            btn.onclick = function(e) {
+              e.preventDefault();
+              showPermissionWarning('manage snapshots and rollbacks');
+              return false;
+            };
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>

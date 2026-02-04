@@ -1,0 +1,256 @@
+version: '3.8'
+
+services:
+  # =================================================================
+  # AUREUS CONSOLE - Main Application
+  # =================================================================
+  console:
+    image: aureus/console:latest
+    container_name: aureus-console-demo
+    ports:
+      - "3000:3000"
+    environment:
+      # Application
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: json
+      
+      # Demo Mode
+      DEMO_MODE: enabled
+      DEMO_ENVIRONMENT: ${DEMO_ENVIRONMENT:-shared}
+      
+      # Database
+      STATE_STORE_TYPE: postgres
+      DATABASE_URL: postgresql://aureus:${DB_PASSWORD:-demopassword}@postgres:5432/aureus_demo
+      DATABASE_POOL_MAX: 20
+      DATABASE_POOL_MIN: 2
+      DATABASE_SSL: "false"
+      
+      # Cache
+      REDIS_URL: redis://redis:6379
+      
+      # Authentication
+      JWT_SECRET: ${JWT_SECRET:-demo-jwt-secret-change-in-production}
+      SESSION_TIMEOUT: 86400  # 24 hours
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-oauth}
+      
+      # OAuth (optional)
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      
+      # LLM Configuration
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LLM_CACHE_ENABLED: "true"
+      LLM_MOCK_FALLBACK: "true"
+      
+      # Resource Limits - Personal
+      MAX_AGENTS_PERSONAL: 5
+      MAX_EXECUTIONS_PER_DAY_PERSONAL: 50
+      MAX_MEMORY_MB_PERSONAL: 100
+      
+      # Resource Limits - Developer
+      MAX_AGENTS_DEVELOPER: 20
+      MAX_EXECUTIONS_PER_DAY_DEVELOPER: 500
+      MAX_MEMORY_MB_DEVELOPER: 1000
+      
+      # Sandbox Configuration
+      ENABLE_SANDBOX: "true"
+      SANDBOX_TYPE_PERSONAL: simulation
+      SANDBOX_TYPE_DEVELOPER: container
+      
+      # Monitoring
+      PROMETHEUS_ENABLED: "true"
+      METRICS_PORT: 9090
+      
+      # Event Logging
+      EVENT_LOG_TYPE: filesystem
+      EVENT_LOG_BASE_DIR: /app/var/run
+      
+    volumes:
+      - ./config:/app/config
+      - ./logs:/app/logs
+      - ./var/run:/app/var/run
+      - demo-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aureus-demo-network
+
+  # =================================================================
+  # POSTGRESQL - Primary Database
+  # =================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: aureus-postgres-demo
+    environment:
+      POSTGRES_DB: aureus_demo
+      POSTGRES_USER: aureus
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-demopassword}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=en_US.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infrastructure/docker/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./infrastructure/docker/demo-data.sql:/docker-entrypoint-initdb.d/02-demo-data.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aureus -d aureus_demo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - aureus-demo-network
+
+  # =================================================================
+  # REDIS - Cache and Session Store
+  # =================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: aureus-redis-demo
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - aureus-demo-network
+
+  # =================================================================
+  # PROMETHEUS - Metrics Collection
+  # =================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aureus-prometheus-demo
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+    depends_on:
+      - console
+    networks:
+      - aureus-demo-network
+
+  # =================================================================
+  # GRAFANA - Monitoring Dashboards
+  # =================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aureus-grafana-demo
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-demodemo}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    networks:
+      - aureus-demo-network
+
+  # =================================================================
+  # ALERTMANAGER (Optional) - Alert Routing
+  # =================================================================
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: aureus-alertmanager-demo
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager/config.yml:/etc/alertmanager/config.yml
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
+    networks:
+      - aureus-demo-network
+
+  # =================================================================
+  # NGINX - Reverse Proxy (Optional)
+  # =================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: aureus-nginx-demo
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/docker/nginx.conf:/etc/nginx/nginx.conf
+      - ./infrastructure/docker/ssl:/etc/nginx/ssl
+      - ./apps/console/src/ui:/usr/share/nginx/html/ui
+    depends_on:
+      - console
+    restart: unless-stopped
+    networks:
+      - aureus-demo-network
+
+# =================================================================
+# NETWORKS
+# =================================================================
+networks:
+  aureus-demo-network:
+    driver: bridge
+    name: aureus-demo-network
+
+# =================================================================
+# VOLUMES
+# =================================================================
+volumes:
+  postgres-data:
+    driver: local
+    name: aureus-postgres-data
+  redis-data:
+    driver: local
+    name: aureus-redis-data
+  prometheus-data:
+    driver: local
+    name: aureus-prometheus-data
+  grafana-data:
+    driver: local
+    name: aureus-grafana-data
+  alertmanager-data:
+    driver: local
+    name: aureus-alertmanager-data
+  demo-data:
+    driver: local
+    name: aureus-demo-data

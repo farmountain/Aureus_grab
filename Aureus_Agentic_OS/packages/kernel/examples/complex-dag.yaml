@@ -1,0 +1,66 @@
+id: complex-dag
+name: Complex DAG with Multiple Dependencies
+tasks:
+  - id: fetch-data-a
+    name: Fetch Data from Source A
+    type: action
+    retry:
+      maxAttempts: 3
+      backoffMs: 500
+    timeoutMs: 10000
+    riskTier: LOW
+
+  - id: fetch-data-b
+    name: Fetch Data from Source B
+    type: action
+    retry:
+      maxAttempts: 3
+      backoffMs: 500
+    timeoutMs: 10000
+    riskTier: LOW
+
+  - id: transform-a
+    name: Transform Data A
+    type: action
+    timeoutMs: 5000
+    riskTier: MEDIUM
+
+  - id: transform-b
+    name: Transform Data B
+    type: action
+    timeoutMs: 5000
+    riskTier: MEDIUM
+
+  - id: merge-data
+    name: Merge Transformed Data
+    type: action
+    retry:
+      maxAttempts: 2
+      backoffMs: 1000
+    timeoutMs: 8000
+    riskTier: HIGH
+    compensation:
+      onFailure: rollback-merge
+
+  - id: validate-results
+    name: Validate Final Results
+    type: action
+    idempotencyKey: validate-key
+    timeoutMs: 3000
+    riskTier: MEDIUM
+
+  - id: rollback-merge
+    name: Rollback Merge Operation
+    type: action
+    riskTier: LOW
+
+dependencies:
+  transform-a:
+    - fetch-data-a
+  transform-b:
+    - fetch-data-b
+  merge-data:
+    - transform-a
+    - transform-b
+  validate-results:
+    - merge-data

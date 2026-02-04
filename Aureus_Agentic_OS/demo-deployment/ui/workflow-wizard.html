@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workflow Specification Generator - Aureus Console</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .wizard-progress {
+      display: flex;
+      justify-content: space-around;
+      padding: 20px 30px;
+      background: #f7f9fc;
+      border-bottom: 1px solid #e1e8ed;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #8492a6;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e1e8ed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .step.active {
+      color: #667eea;
+    }
+
+    .step.active .step-number {
+      background: #667eea;
+      color: white;
+    }
+
+    .step.completed {
+      color: #10b981;
+    }
+
+    .step.completed .step-number {
+      background: #10b981;
+      color: white;
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    .step-content {
+      display: none;
+    }
+
+    .step-content.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #2d3748;
+      font-size: 14px;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e1e8ed;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .chip-input {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px;
+      border: 2px solid #e1e8ed;
+      border-radius: 6px;
+      min-height: 48px;
+    }
+
+    .chip {
+      background: #667eea;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip button {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 0;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chip-input input {
+      border: none;
+      padding: 8px;
+      flex: 1;
+      min-width: 150px;
+      font-size: 14px;
+    }
+
+    .chip-input input:focus {
+      outline: none;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e1e8ed;
+      border-radius: 6px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 1px solid #e1e8ed;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #5568d3;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #e1e8ed;
+      color: #2d3748;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #cbd5e0;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .loading.active {
+      display: block;
+    }
+
+    .spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .spec-preview {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      overflow-x: auto;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .spec-preview pre {
+      margin: 0;
+    }
+
+    .error-list {
+      background: #fee;
+      border: 1px solid #fcc;
+      border-radius: 6px;
+      padding: 15px;
+      color: #c33;
+    }
+
+    .error-list h4 {
+      margin-bottom: 10px;
+      color: #a00;
+    }
+
+    .error-list ul {
+      margin-left: 20px;
+    }
+
+    .error-list li {
+      margin-bottom: 5px;
+    }
+
+    .success-message {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      border-radius: 6px;
+      padding: 15px;
+      color: #155724;
+      margin-bottom: 20px;
+    }
+
+    .edit-button {
+      background: #f59e0b;
+      color: white;
+      margin-top: 15px;
+    }
+
+    .edit-button:hover {
+      background: #d97706;
+    }
+
+    .help-text {
+      font-size: 13px;
+      color: #718096;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 Workflow Specification Generator</h1>
+      <p>Describe your agent goal and let AI generate a structured workflow specification</p>
+    </div>
+
+    <div class="wizard-progress">
+      <div class="step active" data-step="1">
+        <div class="step-number">1</div>
+        <span>Goal & Constraints</span>
+      </div>
+      <div class="step" data-step="2">
+        <div class="step-number">2</div>
+        <span>Preview Spec</span>
+      </div>
+      <div class="step" data-step="3">
+        <div class="step-number">3</div>
+        <span>Validate</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Step 1: Goal Input -->
+      <div class="step-content active" data-step="1">
+        <h2 style="margin-bottom: 20px; color: #2d3748;">Step 1: Define Your Goal</h2>
+        
+        <div class="form-group">
+          <label for="goal">Agent Goal *</label>
+          <textarea 
+            id="goal" 
+            placeholder="Describe what you want the agent to accomplish. For example: 'Reconcile bank transactions with internal ledger entries and flag discrepancies for review'"
+            required
+          ></textarea>
+          <div class="help-text">Be specific and clear about the objective</div>
+        </div>
+
+        <div class="form-group">
+          <label>Constraints</label>
+          <div class="chip-input" id="constraints-input">
+            <input 
+              type="text" 
+              id="constraint-field" 
+              placeholder="Type a constraint and press Enter"
+            />
+          </div>
+          <div class="help-text">Add operational constraints (e.g., "Must complete within 5 minutes", "No external API calls")</div>
+        </div>
+
+        <div class="form-group">
+          <label>Preferred Tools</label>
+          <div class="chip-input" id="tools-input">
+            <input 
+              type="text" 
+              id="tool-field" 
+              placeholder="Type a tool name and press Enter"
+            />
+          </div>
+          <div class="help-text">Specify tools to use (e.g., "database", "email", "slack")</div>
+        </div>
+
+        <div class="form-group">
+          <label for="risk-tolerance">Risk Tolerance</label>
+          <select id="risk-tolerance">
+            <option value="LOW">Low - Conservative approach</option>
+            <option value="MEDIUM" selected>Medium - Balanced approach</option>
+            <option value="HIGH">High - Aggressive approach</option>
+            <option value="CRITICAL">Critical - Maximum safety checks</option>
+          </select>
+          <div class="help-text">Higher tolerance means more retries and safety checks</div>
+        </div>
+
+        <div class="form-group">
+          <label for="additional-context">Additional Context (Optional)</label>
+          <textarea 
+            id="additional-context" 
+            placeholder="Any additional information that might help in generating the workflow"
+          ></textarea>
+        </div>
+
+        <div class="buttons">
+          <button class="btn-secondary" disabled>Previous</button>
+          <button class="btn-primary" onclick="generateWorkflow()">Generate Workflow →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Preview -->
+      <div class="step-content" data-step="2">
+        <h2 style="margin-bottom: 20px; color: #2d3748;">Step 2: Review Generated Specification</h2>
+        
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>Generating workflow specification...</p>
+        </div>
+
+        <div id="spec-preview-container" style="display: none;">
+          <p style="margin-bottom: 15px; color: #4a5568;">
+            Review the generated workflow specification. You can edit it directly or regenerate if needed.
+          </p>
+          
+          <div class="spec-preview">
+            <pre id="spec-preview"></pre>
+          </div>
+
+          <button class="edit-button" onclick="enableEditing()">✏️ Edit Specification</button>
+          
+          <div class="buttons">
+            <button class="btn-secondary" onclick="goToStep(1)">← Previous</button>
+            <button class="btn-primary" onclick="validateWorkflow()">Validate Specification →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Validation -->
+      <div class="step-content" data-step="3">
+        <h2 style="margin-bottom: 20px; color: #2d3748;">Step 3: Validation Results</h2>
+        
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>Validating workflow specification...</p>
+        </div>
+
+        <div id="validation-results" style="display: none;">
+          <!-- Results will be inserted here -->
+        </div>
+
+        <div class="buttons">
+          <button class="btn-secondary" onclick="goToStep(2)">← Previous</button>
+          <button class="btn-primary" id="finish-button" onclick="finishWorkflow()" style="display: none;">Finish ✓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let currentStep = 1;
+    let generatedSpec = null;
+    let constraints = [];
+    let tools = [];
+    let authToken = null;
+
+    // Initialize
+    function init() {
+      setupChipInputs();
+      checkAuth();
+    }
+
+    // Check authentication (simplified for demo)
+    async function checkAuth() {
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'operator', password: 'operator123' })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          authToken = data.token;
+        } else {
+          alert('Authentication failed. Please check your credentials.');
+        }
+      } catch (error) {
+        console.error('Auth error:', error);
+      }
+    }
+
+    // Setup chip inputs
+    function setupChipInputs() {
+      document.getElementById('constraint-field').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.value.trim()) {
+          e.preventDefault();
+          addChip('constraints-input', e.target.value.trim(), constraints);
+          e.target.value = '';
+        }
+      });
+
+      document.getElementById('tool-field').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.value.trim()) {
+          e.preventDefault();
+          addChip('tools-input', e.target.value.trim(), tools);
+          e.target.value = '';
+        }
+      });
+    }
+
+    // Add chip
+    function addChip(containerId, value, array) {
+      array.push(value);
+      renderChips(containerId, array);
+    }
+
+    // Remove chip
+    function removeChip(containerId, index, array) {
+      array.splice(index, 1);
+      renderChips(containerId, array);
+    }
+
+    // Render chips
+    function renderChips(containerId, array) {
+      const container = document.getElementById(containerId);
+      const input = container.querySelector('input');
+      
+      // Remove existing chips
+      container.querySelectorAll('.chip').forEach(chip => chip.remove());
+      
+      // Add chips
+      array.forEach((value, index) => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.innerHTML = `
+          ${value}
+          <button onclick="removeChip('${containerId}', ${index}, ${containerId === 'constraints-input' ? 'constraints' : 'tools'})">&times;</button>
+        `;
+        container.insertBefore(chip, input);
+      });
+    }
+
+    // Navigate to step
+    function goToStep(step) {
+      currentStep = step;
+      
+      // Update step indicators
+      document.querySelectorAll('.step').forEach(el => {
+        const stepNum = parseInt(el.dataset.step);
+        el.classList.remove('active', 'completed');
+        
+        if (stepNum === step) {
+          el.classList.add('active');
+        } else if (stepNum < step) {
+          el.classList.add('completed');
+        }
+      });
+
+      // Update content
+      document.querySelectorAll('.step-content').forEach(el => {
+        el.classList.remove('active');
+        if (parseInt(el.dataset.step) === step) {
+          el.classList.add('active');
+        }
+      });
+    }
+
+    // Generate workflow
+    async function generateWorkflow() {
+      const goal = document.getElementById('goal').value.trim();
+      
+      if (!goal || goal.length < 10) {
+        alert('Please enter a goal with at least 10 characters');
+        return;
+      }
+
+      goToStep(2);
+      document.querySelector('[data-step="2"] .loading').classList.add('active');
+      document.getElementById('spec-preview-container').style.display = 'none';
+
+      try {
+        const response = await fetch('/api/workflows/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            goal,
+            constraints,
+            preferredTools: tools,
+            riskTolerance: document.getElementById('risk-tolerance').value,
+            additionalContext: document.getElementById('additional-context').value.trim() || undefined
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate workflow');
+        }
+
+        const data = await response.json();
+        generatedSpec = data.spec;
+        
+        document.querySelector('[data-step="2"] .loading').classList.remove('active');
+        document.getElementById('spec-preview-container').style.display = 'block';
+        document.getElementById('spec-preview').textContent = JSON.stringify(generatedSpec, null, 2);
+      } catch (error) {
+        alert('Error generating workflow: ' + error.message);
+        goToStep(1);
+      }
+    }
+
+    // Enable editing
+    function enableEditing() {
+      const preview = document.getElementById('spec-preview');
+      const currentText = preview.textContent;
+      
+      preview.contentEditable = true;
+      preview.style.border = '2px solid #667eea';
+      preview.focus();
+      
+      preview.addEventListener('blur', () => {
+        try {
+          generatedSpec = JSON.parse(preview.textContent);
+          preview.contentEditable = false;
+          preview.style.border = 'none';
+        } catch (error) {
+          alert('Invalid JSON. Please fix the syntax errors.');
+          preview.focus();
+        }
+      }, { once: true });
+    }
+
+    // Validate workflow
+    async function validateWorkflow() {
+      goToStep(3);
+      document.querySelector('[data-step="3"] .loading').classList.add('active');
+      document.getElementById('validation-results').style.display = 'none';
+
+      try {
+        const response = await fetch('/api/workflows/validate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(generatedSpec)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to validate workflow');
+        }
+
+        const data = await response.json();
+        
+        document.querySelector('[data-step="3"] .loading').classList.remove('active');
+        document.getElementById('validation-results').style.display = 'block';
+        
+        if (data.valid) {
+          document.getElementById('validation-results').innerHTML = `
+            <div class="success-message">
+              <h3 style="margin-bottom: 10px;">✓ Validation Passed</h3>
+              <p>Your workflow specification is valid and ready to use!</p>
+              <p style="margin-top: 10px; font-size: 14px;">
+                <strong>Workflow:</strong> ${generatedSpec.name}<br>
+                <strong>Tasks:</strong> ${generatedSpec.tasks.length}<br>
+                <strong>Risk Tiers:</strong> ${[...new Set(generatedSpec.tasks.map(t => t.riskTier || 'MEDIUM'))].join(', ')}
+              </p>
+            </div>
+            <div class="spec-preview">
+              <pre>${JSON.stringify(data.spec, null, 2)}</pre>
+            </div>
+          `;
+          document.getElementById('finish-button').style.display = 'inline-block';
+        } else {
+          document.getElementById('validation-results').innerHTML = `
+            <div class="error-list">
+              <h4>❌ Validation Errors</h4>
+              <p style="margin-bottom: 10px;">Please fix the following errors:</p>
+              <ul>
+                ${data.errors.map(err => `<li>${err}</li>`).join('')}
+              </ul>
+            </div>
+          `;
+          document.getElementById('finish-button').style.display = 'none';
+        }
+      } catch (error) {
+        alert('Error validating workflow: ' + error.message);
+        goToStep(2);
+      }
+    }
+
+    // Finish workflow
+    function finishWorkflow() {
+      alert('Workflow specification generated successfully! In a production system, this would be saved to the database and made available for execution.');
+      
+      // Download the spec
+      const blob = new Blob([JSON.stringify(generatedSpec, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `workflow-${generatedSpec.id}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Initialize on load
+    init();
+  </script>
+</body>
+</html>

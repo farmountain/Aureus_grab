@@ -1,0 +1,14 @@
+# Kubernetes Secrets
+secrets.yaml
+
+# Generated kustomization
+kustomization-generated.yaml
+
+# Temporary files
+*.tmp
+*.swp
+*.bak
+
+# Local development files
+.env.local
+local-values.yaml

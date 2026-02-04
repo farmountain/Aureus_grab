@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test & Validate - Aureus Console</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f7fa;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .test-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px 30px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .header h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    /* Main content */
+    .main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Left panel - Test cases */
+    .test-cases-panel {
+      width: 350px;
+      background: white;
+      border-right: 1px solid #e1e8ed;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      padding: 20px;
+      border-bottom: 1px solid #e1e8ed;
+      background: #fafbfc;
+    }
+
+    .panel-header h2 {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .test-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+    }
+
+    .test-card {
+      background: white;
+      border: 2px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .test-card:hover {
+      border-color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+    }
+
+    .test-card.active {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+
+    .test-card-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .test-card-desc {
+      font-size: 13px;
+      color: #8492a6;
+      margin-bottom: 8px;
+    }
+
+    .test-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .test-status.passed {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .test-status.failed {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .test-status.pending {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    /* Right panel - Test details and results */
+    .test-details-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: white;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #e1e8ed;
+      background: #fafbfc;
+      padding: 0 20px;
+    }
+
+    .tab {
+      padding: 15px 25px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .tab.active {
+      border-bottom-color: #667eea;
+      color: #667eea;
+    }
+
+    .tab-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* Action buttons */
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+
+    .btn-secondary {
+      background: #e1e8ed;
+      color: #3c4858;
+    }
+
+    .btn-secondary:hover {
+      background: #d1d8dd;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Results display */
+    .result-summary {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .result-summary h3 {
+      margin-bottom: 15px;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .result-metric {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid #667eea;
+    }
+
+    .result-metric-label {
+      font-size: 13px;
+      color: #8492a6;
+      margin-bottom: 5px;
+    }
+
+    .result-metric-value {
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .result-metric.passed {
+      border-left-color: #28a745;
+    }
+
+    .result-metric.failed {
+      border-left-color: #dc3545;
+    }
+
+    /* CRV Results */
+    .crv-results, .policy-results {
+      margin-bottom: 20px;
+    }
+
+    .crv-results h3, .policy-results h3 {
+      margin-bottom: 15px;
+    }
+
+    .validation-item {
+      background: white;
+      border: 1px solid #e1e8ed;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+
+    .validation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .validation-name {
+      font-weight: 600;
+    }
+
+    .validation-badge {
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .validation-badge.passed {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .validation-badge.failed {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .validation-badge.blocked {
+      background: #f8d7da;
+      color: #721c24;
+      font-weight: 600;
+    }
+
+    .validation-details {
+      font-size: 13px;
+      color: #6c757d;
+    }
+
+    /* Policy simulation */
+    .simulation-form {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #e1e8ed;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    /* Report viewer */
+    .report-viewer {
+      background: white;
+      border: 1px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e1e8ed;
+    }
+
+    .report-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .download-links {
+      display: flex;
+      gap: 10px;
+    }
+
+    .download-link {
+      padding: 8px 15px;
+      background: #667eea;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .download-link:hover {
+      background: #5568d3;
+    }
+
+    .report-content {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    /* Loading state */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #8492a6;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #8492a6;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+
+    .empty-state-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-state-desc {
+      font-size: 14px;
+    }
+
+    /* Approval path */
+    .approval-path {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .approval-step {
+      padding: 6px 12px;
+      background: #e9ecef;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .approval-arrow {
+      color: #8492a6;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <!-- Header -->
+    <div class="header">
+      <h1>Test & Validate</h1>
+      <p>Pre-deployment testing with automated quality gates</p>
+    </div>
+
+    <!-- Main content -->
+    <div class="main-content">
+      <!-- Left panel - Test cases -->
+      <div class="test-cases-panel">
+        <div class="panel-header">
+          <h2>Test Cases</h2>
+          <button class="btn btn-primary" onclick="createNewTest()">+ New Test</button>
+        </div>
+        <div class="test-list" id="testList">
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-title">No test cases yet</div>
+            <div class="empty-state-desc">Create a test case to get started</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right panel - Test details -->
+      <div class="test-details-panel">
+        <div class="tabs">
+          <div class="tab active" data-tab="overview" onclick="switchTab('overview')">Overview</div>
+          <div class="tab" data-tab="crv" onclick="switchTab('crv')">CRV Validation</div>
+          <div class="tab" data-tab="policy" onclick="switchTab('policy')">Policy Decisions</div>
+          <div class="tab" data-tab="report" onclick="switchTab('report')">Report</div>
+          <div class="tab" data-tab="simulate" onclick="switchTab('simulate')">Simulate Policy</div>
+        </div>
+
+        <div class="tab-content">
+          <!-- Overview tab -->
+          <div class="tab-pane active" id="overview">
+            <div class="empty-state">
+              <div class="empty-state-icon">🎯</div>
+              <div class="empty-state-title">Select a test case</div>
+              <div class="empty-state-desc">Choose a test from the left panel or create a new one</div>
+            </div>
+          </div>
+
+          <!-- CRV Validation tab -->
+          <div class="tab-pane" id="crv">
+            <h3>CRV Validation Results</h3>
+            <div id="crvResults" class="crv-results"></div>
+          </div>
+
+          <!-- Policy Decisions tab -->
+          <div class="tab-pane" id="policy">
+            <h3>Policy Decision Results</h3>
+            <div id="policyResults" class="policy-results"></div>
+          </div>
+
+          <!-- Report tab -->
+          <div class="tab-pane" id="report">
+            <div class="report-viewer">
+              <div class="report-header">
+                <div class="report-title">Evaluation Report</div>
+                <div class="download-links" id="downloadLinks"></div>
+              </div>
+              <div class="report-content" id="reportContent">
+                No report available. Run a test to generate a report.
+              </div>
+            </div>
+          </div>
+
+          <!-- Policy Simulation tab -->
+          <div class="tab-pane" id="simulate">
+            <h3>Policy Simulation</h3>
+            <div class="simulation-form">
+              <div class="form-group">
+                <label for="actionName">Action Name</label>
+                <input type="text" class="form-control" id="actionName" placeholder="e.g., update_customer_record">
+              </div>
+              <div class="form-group">
+                <label for="riskTier">Risk Tier</label>
+                <select class="form-control" id="riskTier">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="principalType">Principal Type</label>
+                <select class="form-control" id="principalType">
+                  <option value="agent">Agent</option>
+                  <option value="human">Human</option>
+                  <option value="service">Service</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" onclick="runPolicySimulation()">Simulate</button>
+            </div>
+            <div id="simulationResults"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentTest = null;
+    let currentResult = null;
+
+    // Sample test cases (in production, these would be loaded from API)
+    const sampleTests = [
+      {
+        id: 'test_1',
+        name: 'Customer Record Update',
+        description: 'Test workflow for updating customer records with CRV validation',
+        workflowSpec: {
+          id: 'customer_update_wf',
+          name: 'Customer Update Workflow',
+          tasks: [
+            {
+              id: 'validate_input',
+              type: 'validation',
+              riskTier: 'low',
+              crvGate: {
+                name: 'input_validation',
+                validators: [],
+                blockOnFailure: true
+              }
+            },
+            {
+              id: 'update_record',
+              type: 'write',
+              riskTier: 'medium'
+            }
+          ]
+        },
+        sampleData: {
+          customerId: 'CUST-001',
+          name: 'John Doe',
+          email: 'john@example.com'
+        }
+      },
+      {
+        id: 'test_2',
+        name: 'High-Risk Transaction',
+        description: 'Test workflow requiring human approval',
+        workflowSpec: {
+          id: 'high_risk_tx_wf',
+          name: 'High Risk Transaction Workflow',
+          tasks: [
+            {
+              id: 'validate_amount',
+              type: 'validation',
+              riskTier: 'low'
+            },
+            {
+              id: 'process_transaction',
+              type: 'execute',
+              riskTier: 'critical'
+            }
+          ]
+        },
+        sampleData: {
+          amount: 100000,
+          currency: 'USD',
+          destination: 'ACC-999'
+        }
+      }
+    ];
+
+    // Initialize
+    function init() {
+      loadTestCases();
+    }
+
+    // Load test cases
+    function loadTestCases() {
+      const testList = document.getElementById('testList');
+      testList.innerHTML = '';
+
+      sampleTests.forEach(test => {
+        const card = document.createElement('div');
+        card.className = 'test-card';
+        card.onclick = () => selectTest(test);
+        card.innerHTML = `
+          <div class="test-card-title">${test.name}</div>
+          <div class="test-card-desc">${test.description}</div>
+          <span class="test-status pending">Ready</span>
+        `;
+        testList.appendChild(card);
+      });
+    }
+
+    // Select test
+    function selectTest(test) {
+      currentTest = test;
+      
+      // Update active state
+      document.querySelectorAll('.test-card').forEach(card => {
+        card.classList.remove('active');
+      });
+      event.target.closest('.test-card').classList.add('active');
+
+      // Show overview
+      showTestOverview(test);
+    }
+
+    // Show test overview
+    function showTestOverview(test) {
+      const overview = document.getElementById('overview');
+      overview.innerHTML = `
+        <div class="action-buttons">
+          <button class="btn btn-primary" onclick="runTest('dry_run')">▶ Run Test</button>
+          <button class="btn btn-secondary" onclick="runTest('validation')">✓ Validation Only</button>
+        </div>
+        <div class="result-summary">
+          <h3>Test Configuration</h3>
+          <div><strong>Test ID:</strong> ${test.id}</div>
+          <div><strong>Workflow:</strong> ${test.workflowSpec.name}</div>
+          <div><strong>Tasks:</strong> ${test.workflowSpec.tasks.length}</div>
+          <div style="margin-top: 10px;"><strong>Sample Data:</strong></div>
+          <pre style="background: white; padding: 10px; border-radius: 4px; margin-top: 5px; font-size: 12px;">${JSON.stringify(test.sampleData, null, 2)}</pre>
+        </div>
+      `;
+    }
+
+    // Run test
+    async function runTest(mode) {
+      if (!currentTest) return;
+
+      // Show loading
+      const overview = document.getElementById('overview');
+      overview.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <div>Running test...</div>
+        </div>
+      `;
+
+      try {
+        // In production, this would call the API
+        // For now, simulate a test run
+        await simulateTestRun(currentTest, mode);
+      } catch (error) {
+        alert('Error running test: ' + error.message);
+      }
+    }
+
+    // Simulate test run (mock implementation)
+    async function simulateTestRun(test, mode) {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Mock result
+      currentResult = {
+        testId: test.id,
+        executionId: `exec_${Date.now()}`,
+        mode: mode,
+        startedAt: new Date(),
+        completedAt: new Date(),
+        status: 'passed',
+        workflowStatus: 'completed',
+        crvResults: [
+          {
+            gateName: 'input_validation',
+            passed: true,
+            blockedCommit: false,
+            timestamp: new Date(),
+            validationResults: [
+              { valid: true, reason: 'All required fields present', confidence: 0.98 }
+            ]
+          }
+        ],
+        policyResults: [
+          {
+            actionId: 'update_record',
+            actionName: 'Update Record',
+            riskTier: 'medium',
+            decision: {
+              allowed: true,
+              reason: 'Within permitted risk tier',
+              requiresHumanApproval: false
+            },
+            timestamp: new Date(),
+            approvalPath: ['Automatic approval']
+          }
+        ],
+        evaluationReport: {
+          metadata: {
+            generatedAt: new Date(),
+            version: '0.1.0',
+            timeRange: { start: new Date(), end: new Date() }
+          },
+          evaluation: {
+            timestamp: new Date(),
+            totalWorkflows: 1,
+            successfulWorkflows: 1,
+            failedWorkflows: 0,
+            overallSuccessRate: 1.0,
+            taskResults: {},
+            criteriaResults: [],
+            passed: true,
+            summary: 'All success criteria met.'
+          },
+          recommendations: [],
+          details: {
+            workflows: [],
+            criticalFailures: []
+          }
+        },
+        artifacts: [
+          { id: 'report_json', type: 'report_json', name: 'report.json' },
+          { id: 'report_md', type: 'report_markdown', name: 'report.md' }
+        ]
+      };
+
+      // Show results
+      showTestResults(currentResult);
+    }
+
+    // Show test results
+    function showTestResults(result) {
+      const overview = document.getElementById('overview');
+      const statusClass = result.status === 'passed' ? 'passed' : 'failed';
+      
+      overview.innerHTML = `
+        <div class="action-buttons">
+          <button class="btn btn-primary" onclick="runTest('dry_run')">▶ Run Again</button>
+        </div>
+        <div class="result-summary">
+          <h3>Test Results</h3>
+          <div class="result-grid">
+            <div class="result-metric ${statusClass}">
+              <div class="result-metric-label">Status</div>
+              <div class="result-metric-value">${result.status.toUpperCase()}</div>
+            </div>
+            <div class="result-metric">
+              <div class="result-metric-label">Workflow</div>
+              <div class="result-metric-value" style="font-size: 16px;">${result.workflowStatus}</div>
+            </div>
+            <div class="result-metric">
+              <div class="result-metric-label">CRV Checks</div>
+              <div class="result-metric-value">${result.crvResults.length}</div>
+            </div>
+            <div class="result-metric">
+              <div class="result-metric-label">Policy Checks</div>
+              <div class="result-metric-value">${result.policyResults.length}</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Update CRV results
+      showCRVResults(result.crvResults);
+
+      // Update policy results
+      showPolicyResults(result.policyResults);
+
+      // Update report
+      showReport(result.evaluationReport, result.artifacts);
+    }
+
+    // Show CRV results
+    function showCRVResults(results) {
+      const container = document.getElementById('crvResults');
+      
+      if (results.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-desc">No CRV validations in this test</div></div>';
+        return;
+      }
+
+      container.innerHTML = results.map(result => `
+        <div class="validation-item">
+          <div class="validation-header">
+            <div class="validation-name">${result.gateName}</div>
+            <span class="validation-badge ${result.passed ? 'passed' : 'failed'}">
+              ${result.passed ? '✓ Passed' : '✗ Failed'}
+            </span>
+          </div>
+          ${result.blockedCommit ? '<div class="validation-badge blocked">⛔ COMMIT BLOCKED</div>' : ''}
+          <div class="validation-details">
+            ${result.validationResults.map(v => `
+              <div>• ${v.reason || 'Validation performed'} ${v.confidence ? `(${(v.confidence * 100).toFixed(0)}% confidence)` : ''}</div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Show policy results
+    function showPolicyResults(results) {
+      const container = document.getElementById('policyResults');
+      
+      if (results.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-desc">No policy checks in this test</div></div>';
+        return;
+      }
+
+      container.innerHTML = results.map(result => `
+        <div class="validation-item">
+          <div class="validation-header">
+            <div class="validation-name">${result.actionName} <span style="color: #8492a6; font-weight: normal;">(${result.riskTier})</span></div>
+            <span class="validation-badge ${result.decision.allowed ? 'passed' : 'failed'}">
+              ${result.decision.allowed ? '✓ Allowed' : '✗ Denied'}
+            </span>
+          </div>
+          <div class="validation-details">
+            <div><strong>Reason:</strong> ${result.decision.reason}</div>
+            ${result.decision.requiresHumanApproval ? '<div><strong>⚠ Requires Human Approval</strong></div>' : ''}
+            ${result.approvalPath ? `
+              <div class="approval-path">
+                <strong>Approval Path:</strong>
+                ${result.approvalPath.map(step => `<span class="approval-step">${step}</span>`).join('<span class="approval-arrow">→</span>')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Show report
+    function showReport(report, artifacts) {
+      if (!report) {
+        document.getElementById('reportContent').textContent = 'No report available.';
+        document.getElementById('downloadLinks').innerHTML = '';
+        return;
+      }
+
+      // Show download links
+      const downloadLinks = document.getElementById('downloadLinks');
+      downloadLinks.innerHTML = artifacts.map(artifact => `
+        <a href="#" class="download-link" onclick="downloadArtifact('${artifact.id}'); return false;">
+          ⬇ ${artifact.name}
+        </a>
+      `).join('');
+
+      // Show report content (simplified markdown)
+      const content = document.getElementById('reportContent');
+      content.textContent = `
+# Evaluation Report
+
+**Status:** ${report.evaluation.passed ? '✅ PASSED' : '❌ FAILED'}
+**Summary:** ${report.evaluation.summary}
+
+## Workflow Metrics
+- Total Workflows: ${report.evaluation.totalWorkflows}
+- Successful: ${report.evaluation.successfulWorkflows}
+- Failed: ${report.evaluation.failedWorkflows}
+- Success Rate: ${(report.evaluation.overallSuccessRate * 100).toFixed(2)}%
+
+## Recommendations
+${report.recommendations.length > 0 ? report.recommendations.map(r => `- ${r}`).join('\n') : '- No recommendations'}
+      `;
+    }
+
+    // Download artifact
+    function downloadArtifact(artifactId) {
+      alert('In production, this would download: ' + artifactId);
+    }
+
+    // Run policy simulation
+    async function runPolicySimulation() {
+      const actionName = document.getElementById('actionName').value;
+      const riskTier = document.getElementById('riskTier').value;
+      const principalType = document.getElementById('principalType').value;
+
+      if (!actionName) {
+        alert('Please enter an action name');
+        return;
+      }
+
+      // Mock simulation result
+      const result = {
+        decision: {
+          allowed: riskTier !== 'critical',
+          reason: riskTier === 'critical' ? 'Critical actions require human approval' : 'Within permitted risk tier',
+          requiresHumanApproval: riskTier === 'critical' || riskTier === 'high'
+        },
+        approvalPath: getApprovalPath(riskTier),
+        estimatedApprovalTime: getApprovalTime(riskTier)
+      };
+
+      // Show results
+      const resultsDiv = document.getElementById('simulationResults');
+      resultsDiv.innerHTML = `
+        <div class="validation-item" style="margin-top: 20px;">
+          <div class="validation-header">
+            <div class="validation-name">Simulation Result</div>
+            <span class="validation-badge ${result.decision.allowed ? 'passed' : 'failed'}">
+              ${result.decision.allowed ? '✓ Allowed' : '✗ Denied'}
+            </span>
+          </div>
+          <div class="validation-details">
+            <div><strong>Action:</strong> ${actionName}</div>
+            <div><strong>Risk Tier:</strong> ${riskTier}</div>
+            <div><strong>Principal:</strong> ${principalType}</div>
+            <div><strong>Decision:</strong> ${result.decision.reason}</div>
+            ${result.decision.requiresHumanApproval ? '<div><strong>⚠ Requires Human Approval</strong></div>' : ''}
+            <div><strong>Estimated Approval Time:</strong> ${result.estimatedApprovalTime}</div>
+            <div class="approval-path">
+              <strong>Approval Path:</strong>
+              ${result.approvalPath.map(step => `<span class="approval-step">${step}</span>`).join('<span class="approval-arrow">→</span>')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Helper functions
+    function getApprovalPath(riskTier) {
+      switch (riskTier) {
+        case 'critical': return ['Senior Engineer', 'Tech Lead', 'Director'];
+        case 'high': return ['Senior Engineer', 'Tech Lead'];
+        case 'medium': return ['Senior Engineer'];
+        default: return ['Automatic approval'];
+      }
+    }
+
+    function getApprovalTime(riskTier) {
+      switch (riskTier) {
+        case 'critical': return '24-48 hours';
+        case 'high': return '4-8 hours';
+        case 'medium': return '1-2 hours';
+        default: return 'Immediate';
+      }
+    }
+
+    // Switch tabs
+    function switchTab(tabName) {
+      // Update tab styles
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+
+      // Update tab panes
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('active');
+      });
+      document.getElementById(tabName).classList.add('active');
+    }
+
+    // Create new test (placeholder)
+    function createNewTest() {
+      alert('Test creation form would open here. For this demo, use the sample tests provided.');
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

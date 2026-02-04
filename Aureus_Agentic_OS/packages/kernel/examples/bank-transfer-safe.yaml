@@ -1,0 +1,120 @@
+# Example: Workflow with Safety Policy
+# This workflow demonstrates model-checking with safety policies
+
+id: bank-transfer-workflow
+name: Bank Transfer with Safety Checks
+
+# Optional: Define a custom safety policy
+# If omitted, DEFAULT_SAFETY_POLICY will be used
+safetyPolicy:
+  name: bank-transfer-policy
+  description: Safety policy for bank transfers
+  failFast: false
+  rules:
+    - type: no_action_after_critical_without_approval
+      enabled: true
+      severity: error
+      message: "Critical banking operations must only be followed by approved compensation tasks"
+      approvedFollowers:
+        - audit-log  # Explicitly approve audit logging after CRITICAL
+    - type: require_permissions_for_high_risk
+      enabled: true
+      severity: error
+      minimumRiskTier: HIGH
+    - type: require_compensation_for_critical
+      enabled: true
+      severity: error
+    - type: no_cycles
+      enabled: true
+      severity: error
+
+tasks:
+  # LOW risk: Read account balance
+  - id: read-balance
+    name: Read Account Balance
+    type: action
+    riskTier: LOW
+    requiredPermissions:
+      - action: read
+        resource: account
+        intent: read
+        dataZone: confidential
+
+  # MEDIUM risk: Validate transfer
+  - id: validate-transfer
+    name: Validate Transfer Amount
+    type: action
+    riskTier: MEDIUM
+    requiredPermissions:
+      - action: read
+        resource: account
+        intent: read
+        dataZone: confidential
+    retry:
+      maxAttempts: 3
+      backoffMs: 1000
+      backoffMultiplier: 2
+
+  # CRITICAL risk: Execute transfer
+  - id: execute-transfer
+    name: Execute Bank Transfer
+    type: action
+    riskTier: CRITICAL
+    requiredPermissions:
+      - action: write
+        resource: account
+        intent: write
+        dataZone: confidential
+    compensation:
+      onFailure: rollback-transfer
+      onTimeout: rollback-transfer
+    timeoutMs: 30000
+    retry:
+      maxAttempts: 1  # No retries for CRITICAL operations
+
+  # LOW risk: Compensation task
+  - id: rollback-transfer
+    name: Rollback Transfer
+    type: action
+    riskTier: LOW
+    requiredPermissions:
+      - action: write
+        resource: account
+        intent: write
+        dataZone: confidential
+    compensationAction:
+      tool: reverse-transaction
+      args:
+        reason: failure_or_timeout
+
+  # LOW risk: Audit logging (approved to follow CRITICAL)
+  - id: audit-log
+    name: Record Audit Log
+    type: action
+    riskTier: LOW
+    requiredPermissions:
+      - action: write
+        resource: audit_log
+        intent: write
+        dataZone: internal
+
+  # LOW risk: Send notification
+  - id: send-notification
+    name: Send Success Notification
+    type: action
+    riskTier: LOW
+    requiredPermissions:
+      - action: write
+        resource: notification
+        intent: write
+        dataZone: public
+
+dependencies:
+  validate-transfer:
+    - read-balance
+  execute-transfer:
+    - validate-transfer
+  audit-log:
+    - execute-transfer
+  send-notification:
+    - audit-log

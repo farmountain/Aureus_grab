@@ -1,0 +1,285 @@
+// Jenkins Declarative Pipeline for Aureus Agentic OS
+// Production deployment pipeline with verification and rollback
+
+pipeline {
+    agent any
+    
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['staging', 'production'], description: 'Deployment environment')
+        string(name: 'VERSION', defaultValue: '', description: 'Version to deploy (e.g., v1.2.3)')
+        booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Skip tests (not recommended)')
+    }
+    
+    environment {
+        NODE_VERSION = '18'
+        DEPLOY_PATH = '/opt/aureus'
+        SERVICE_NAME = 'aureus-console'
+        ARTIFACT_NAME = "console-app-${params.VERSION ?: env.BUILD_NUMBER}.tar.gz"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    env.VERSION = params.VERSION ?: "build-${env.BUILD_NUMBER}"
+                }
+            }
+        }
+        
+        stage('Pre-Deployment Verification') {
+            steps {
+                script {
+                    sh '''
+                        npm ci
+                        npm run build:ordered
+                        
+                        chmod +x ops/verification/pre-deployment.sh
+                        ENVIRONMENT=${ENVIRONMENT} \
+                        VERSION=${VERSION} \
+                        VERIFY_TESTS=${SKIP_TESTS} \
+                        ./ops/verification/pre-deployment.sh
+                    '''
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                script {
+                    sh '''
+                        # Build console
+                        npm run build --workspace=@aureus/console
+                        
+                        # Create deployment package
+                        mkdir -p deploy-package
+                        cp -r apps/console/dist deploy-package/
+                        cp -r apps/console/src/ui deploy-package/ui
+                        cp apps/console/package.json deploy-package/
+                        echo "${VERSION}" > deploy-package/VERSION
+                        tar -czf ${ARTIFACT_NAME} -C deploy-package .
+                    '''
+                }
+            }
+        }
+        
+        stage('Archive Artifacts') {
+            steps {
+                archiveArtifacts artifacts: '*.tar.gz', fingerprint: true
+                stash name: 'deployment-package', includes: '*.tar.gz'
+            }
+        }
+        
+        stage('Deploy to Staging') {
+            when {
+                expression { params.ENVIRONMENT == 'staging' || currentBuild.result == null }
+            }
+            steps {
+                script {
+                    unstash 'deployment-package'
+                    
+                    withCredentials([sshUserPrivateKey(credentialsId: 'staging-ssh', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                            # Copy package to staging
+                            scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                                ${ARTIFACT_NAME} ${STAGING_USER}@${STAGING_HOST}:/tmp/
+                            
+                            # Deploy on staging server
+                            ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                                ${STAGING_USER}@${STAGING_HOST} << 'ENDSSH'
+                                # Stop service
+                                sudo systemctl stop ${SERVICE_NAME} || true
+                                
+                                # Backup current version
+                                sudo cp -r ${DEPLOY_PATH}/apps/console ${DEPLOY_PATH}/apps/console.backup || true
+                                
+                                # Extract new version
+                                sudo tar -xzf /tmp/${ARTIFACT_NAME} -C ${DEPLOY_PATH}/apps/console/
+                                
+                                # Start service
+                                sudo systemctl start ${SERVICE_NAME}
+                                
+                                # Cleanup
+                                rm /tmp/${ARTIFACT_NAME}
+ENDSSH
+                            
+                            # Wait for service
+                            sleep 30
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Post-Deployment Verification (Staging)') {
+            when {
+                expression { params.ENVIRONMENT == 'staging' || currentBuild.result == null }
+            }
+            steps {
+                script {
+                    sh '''
+                        chmod +x ops/verification/post-deployment.sh
+                        CONSOLE_URL=${STAGING_URL} \
+                        ENVIRONMENT=staging \
+                        VERSION=${VERSION} \
+                        ./ops/verification/post-deployment.sh
+                        
+                        chmod +x ops/health-checks/console-health.sh
+                        CONSOLE_URL=${STAGING_URL} \
+                        ./ops/health-checks/console-health.sh
+                    '''
+                }
+            }
+        }
+        
+        stage('Approval for Production') {
+            when {
+                expression { params.ENVIRONMENT == 'production' }
+            }
+            steps {
+                script {
+                    timeout(time: 1, unit: 'HOURS') {
+                        input message: 'Deploy to production?', ok: 'Deploy'
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy to Production') {
+            when {
+                expression { params.ENVIRONMENT == 'production' }
+            }
+            steps {
+                script {
+                    unstash 'deployment-package'
+                    
+                    withCredentials([sshUserPrivateKey(credentialsId: 'production-ssh', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                            # Deploy to all production hosts
+                            IFS=',' read -ra HOSTS <<< "${PRODUCTION_HOSTS}"
+                            for host in "${HOSTS[@]}"; do
+                                echo "Deploying to $host..."
+                                
+                                # Copy package
+                                scp -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                                    ${ARTIFACT_NAME} ${PRODUCTION_USER}@${host}:/tmp/
+                                
+                                # Deploy on server
+                                ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                                    ${PRODUCTION_USER}@${host} << 'ENDSSH'
+                                    # Backup current version
+                                    sudo cp -r ${DEPLOY_PATH}/apps/console ${DEPLOY_PATH}/apps/console.backup.$(date +%Y%m%d-%H%M%S)
+                                    
+                                    # Stop service
+                                    sudo systemctl stop ${SERVICE_NAME}
+                                    
+                                    # Extract new version
+                                    sudo tar -xzf /tmp/${ARTIFACT_NAME} -C ${DEPLOY_PATH}/apps/console/
+                                    
+                                    # Start service
+                                    sudo systemctl start ${SERVICE_NAME}
+                                    
+                                    # Wait for startup
+                                    sleep 10
+                                    
+                                    # Cleanup
+                                    rm /tmp/${ARTIFACT_NAME}
+ENDSSH
+                                
+                                echo "Deployed to $host"
+                            done
+                            
+                            # Wait for all services
+                            sleep 60
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Post-Deployment Verification (Production)') {
+            when {
+                expression { params.ENVIRONMENT == 'production' }
+            }
+            steps {
+                script {
+                    sh '''
+                        chmod +x ops/verification/post-deployment.sh
+                        CONSOLE_URL=${PRODUCTION_URL} \
+                        ENVIRONMENT=production \
+                        VERSION=${VERSION} \
+                        ./ops/verification/post-deployment.sh
+                        
+                        # Health checks on all nodes
+                        IFS=',' read -ra HOSTS <<< "${PRODUCTION_HOSTS}"
+                        for host in "${HOSTS[@]}"; do
+                            echo "Health check for $host..."
+                            CONSOLE_URL=https://${host} ./ops/health-checks/console-health.sh
+                        done
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        failure {
+            script {
+                if (params.ENVIRONMENT == 'production') {
+                    echo 'Deployment failed! Initiating rollback...'
+                    
+                    withCredentials([sshUserPrivateKey(credentialsId: 'production-ssh', keyFileVariable: 'SSH_KEY')]) {
+                        sh '''
+                            IFS=',' read -ra HOSTS <<< "${PRODUCTION_HOSTS}"
+                            for host in "${HOSTS[@]}"; do
+                                echo "Rolling back $host..."
+                                ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no \
+                                    ${PRODUCTION_USER}@${host} << 'ENDSSH'
+                                    # Stop service
+                                    sudo systemctl stop ${SERVICE_NAME}
+                                    
+                                    # Restore backup
+                                    BACKUP=$(ls -t ${DEPLOY_PATH}/apps/console.backup.* | head -n1)
+                                    if [ -n "$BACKUP" ]; then
+                                        sudo rm -rf ${DEPLOY_PATH}/apps/console
+                                        sudo cp -r "$BACKUP" ${DEPLOY_PATH}/apps/console
+                                    fi
+                                    
+                                    # Start service
+                                    sudo systemctl start ${SERVICE_NAME}
+ENDSSH
+                            done
+                            
+                            # Verify rollback
+                            sleep 30
+                            chmod +x ops/verification/post-deployment.sh
+                            CONSOLE_URL=${PRODUCTION_URL} ./ops/verification/post-deployment.sh || echo "Rollback verification failed"
+                        '''
+                    }
+                }
+            }
+        }
+        
+        success {
+            echo "Deployment to ${params.ENVIRONMENT} completed successfully!"
+        }
+        
+        always {
+            // Send notification (optional - requires setup)
+            script {
+                try {
+                    sh '''
+                        curl -X POST -H 'Content-type: application/json' \
+                            --data "{\\"text\\":\\"Pipeline ${BUILD_STATUS}: ${JOB_NAME} #${BUILD_NUMBER}\\"}" \
+                            ${SLACK_WEBHOOK_URL} || true
+                    '''
+                } catch (Exception e) {
+                    echo "Failed to send notification: ${e.message}"
+                }
+            }
+            
+            // Cleanup workspace
+            cleanWs()
+        }
+    }
+}

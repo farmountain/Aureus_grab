@@ -1,0 +1,116 @@
+{
+  "nodes": [
+    {
+      "id": "action-1",
+      "type": "action",
+      "name": "validate-email",
+      "toolCall": "email.validate",
+      "inputs": {
+        "email": "alice@example.com"
+      },
+      "timestamp": "2024-01-01T10:00:00.000Z"
+    },
+    {
+      "id": "effect-1",
+      "type": "effect",
+      "description": "Email validated successfully",
+      "stateDiff": {
+        "key": "validation:email",
+        "before": null,
+        "after": {
+          "valid": true
+        }
+      },
+      "timestamp": "2024-01-01T10:00:01.000Z"
+    },
+    {
+      "id": "action-2",
+      "type": "action",
+      "name": "create-user",
+      "toolCall": "database.create",
+      "inputs": {
+        "email": "alice@example.com",
+        "name": "Alice"
+      },
+      "timestamp": "2024-01-01T10:00:02.000Z"
+    },
+    {
+      "id": "effect-2",
+      "type": "effect",
+      "description": "User created in database",
+      "stateDiff": {
+        "key": "user:1",
+        "before": null,
+        "after": {
+          "id": 1,
+          "email": "alice@example.com",
+          "name": "Alice"
+        }
+      },
+      "timestamp": "2024-01-01T10:00:03.000Z"
+    },
+    {
+      "id": "action-3",
+      "type": "action",
+      "name": "send-welcome-email",
+      "toolCall": "email.send",
+      "inputs": {
+        "to": "alice@example.com",
+        "template": "welcome"
+      },
+      "timestamp": "2024-01-01T10:00:04.000Z"
+    },
+    {
+      "id": "effect-3",
+      "type": "effect",
+      "description": "Welcome email sent",
+      "stateDiff": {
+        "key": "email:welcome:1",
+        "before": null,
+        "after": {
+          "sent": true,
+          "timestamp": "2024-01-01T10:00:05.000Z"
+        }
+      },
+      "timestamp": "2024-01-01T10:00:05.000Z"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "from": "action-1",
+      "to": "effect-1",
+      "type": "causes",
+      "timestamp": "2024-01-01T10:00:01.000Z"
+    },
+    {
+      "id": "edge-2",
+      "from": "effect-1",
+      "to": "action-2",
+      "type": "enables",
+      "timestamp": "2024-01-01T10:00:02.000Z"
+    },
+    {
+      "id": "edge-3",
+      "from": "action-2",
+      "to": "effect-2",
+      "type": "causes",
+      "timestamp": "2024-01-01T10:00:03.000Z"
+    },
+    {
+      "id": "edge-4",
+      "from": "effect-2",
+      "to": "action-3",
+      "type": "enables",
+      "timestamp": "2024-01-01T10:00:04.000Z"
+    },
+    {
+      "id": "edge-5",
+      "from": "action-3",
+      "to": "effect-3",
+      "type": "causes",
+      "timestamp": "2024-01-01T10:00:05.000Z"
+    }
+  ],
+  "log": []
+}

@@ -1,0 +1,49 @@
+{
+  "mapping_name": "bank_to_credit_ledger",
+  "version": "1.0",
+  "source": {
+    "system": "bank_transactions",
+    "filters": {
+      "transaction_type": "CREDIT"
+    }
+  },
+  "target": {
+    "system": "credit_ledger"
+  },
+  "field_mappings": [
+    {
+      "source_field": "transaction_id",
+      "target_field": "ledger_id",
+      "transformation": "none"
+    },
+    {
+      "source_field": "account_number",
+      "target_field": "account_id",
+      "transformation": "none"
+    },
+    {
+      "source_field": "transaction_date",
+      "target_field": "posting_date",
+      "transformation": "none"
+    },
+    {
+      "source_field": "amount",
+      "target_field": "credit_amount",
+      "transformation": "none",
+      "validation": {
+        "min": 0,
+        "max": 999999999.99
+      }
+    },
+    {
+      "source_field": "reference_number",
+      "target_field": "external_ref",
+      "transformation": "none"
+    }
+  ],
+  "reconciliation_keys": [
+    "external_ref",
+    "account_id",
+    "posting_date"
+  ]
+}

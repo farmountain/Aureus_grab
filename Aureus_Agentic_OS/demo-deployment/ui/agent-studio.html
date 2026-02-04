@@ -1,0 +1,2496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Studio - Aureus Console</title>
+  <script src="/persona-utils.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+
+    .header-links {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .header-links a {
+      color: white;
+      text-decoration: underline;
+      opacity: 0.9;
+      margin: 0 10px;
+    }
+
+    .header-links a:hover {
+      opacity: 1;
+    }
+
+    .wizard-progress {
+      display: flex;
+      justify-content: space-around;
+      padding: 20px 30px;
+      background: #f7f9fc;
+      border-bottom: 1px solid #e1e8ed;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #8492a6;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e1e8ed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+
+    .step.active {
+      color: #667eea;
+    }
+
+    .step.active .step-number {
+      background: #667eea;
+      color: white;
+    }
+
+    .step.completed {
+      color: #10b981;
+    }
+
+    .step.completed .step-number {
+      background: #10b981;
+      color: white;
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    .step-content {
+      display: none;
+    }
+
+    .step-content.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #334155;
+      font-size: 14px;
+    }
+
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .tool-list, .policy-list {
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .tool-item, .policy-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      margin-bottom: 5px;
+      background: #f8fafc;
+      border-radius: 6px;
+    }
+
+    .tool-item input[type="checkbox"],
+    .policy-item input[type="checkbox"] {
+      width: auto;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      justify-content: space-between;
+      margin-top: 30px;
+    }
+
+    button {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #64748b;
+    }
+
+    .btn-secondary:hover {
+      background: #cbd5e1;
+    }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #059669;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .preview-section {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .preview-section h3 {
+      margin-bottom: 15px;
+      color: #334155;
+    }
+
+    .config-preview {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .validation-results {
+      margin-top: 20px;
+    }
+
+    .validation-item {
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      display: flex;
+      align-items: start;
+      gap: 10px;
+    }
+
+    .validation-item.error {
+      background: #fee;
+      border-left: 4px solid #ef4444;
+    }
+
+    .validation-item.warning {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+    }
+
+    .validation-item.info {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+    }
+
+    .validation-item.success {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .loading.active {
+      display: block;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .help-text {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 5px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge.low { background: #dbeafe; color: #1e40af; }
+    .badge.medium { background: #fef3c7; color: #92400e; }
+    .badge.high { background: #fecaca; color: #991b1b; }
+    .badge.critical { background: #fce7f3; color: #831843; }
+
+    .deployment-status {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+
+    .stage-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: white;
+      border-radius: 6px;
+      border: 2px solid #e2e8f0;
+    }
+
+    .stage-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .stage-icon.completed { background: #10b981; color: white; }
+    .stage-icon.pending { background: #fbbf24; color: white; }
+    .stage-icon.failed { background: #ef4444; color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 Agent Studio</h1>
+      <p>Design, validate, and deploy AI agents with confidence</p>
+      <div class="header-links">
+        <a href="/devops">🚀 DevOps Dashboard</a>
+        <a href="/tool-adapter-wizard">🛠️ Create Tool Adapter</a>
+        <a href="#" onclick="showVersionHistory(); return false;">📚 Version History</a>
+      </div>
+    </div>
+
+    <div class="wizard-progress">
+      <div class="step active" data-step="1">
+        <div class="step-number">1</div>
+        <span>Define Goal</span>
+      </div>
+      <div class="step" data-step="2">
+        <div class="step-number">2</div>
+        <span>Select Domain</span>
+      </div>
+      <div class="step" data-step="3">
+        <div class="step-number">3</div>
+        <span>Select Tools</span>
+      </div>
+      <div class="step" data-step="4">
+        <div class="step-number">4</div>
+        <span>Configure Policies</span>
+      </div>
+      <div class="step" data-step="5">
+        <div class="step-number">5</div>
+        <span>Blueprint Review</span>
+      </div>
+      <div class="step" data-step="6">
+        <div class="step-number">6</div>
+        <span>Deploy</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Step 1: Define Goal -->
+      <div class="step-content active" data-step="1">
+        <h2>Step 1: Define Agent Goal</h2>
+        <p style="color: #64748b; margin-bottom: 20px;">Describe what you want your agent to accomplish</p>
+
+        <div class="form-group">
+          <label for="agent-goal">Agent Goal *</label>
+          <textarea id="agent-goal" placeholder="e.g., Monitor system logs and alert on critical errors" required></textarea>
+          <div class="help-text">Provide a clear, specific description of the agent's primary objective</div>
+        </div>
+
+        <div class="form-group">
+          <label for="risk-profile">Risk Profile *</label>
+          <select id="risk-profile">
+            <option value="LOW">Low - Read-only operations</option>
+            <option value="MEDIUM" selected>Medium - Standard operations</option>
+            <option value="HIGH">High - Sensitive operations</option>
+            <option value="CRITICAL">Critical - High-impact operations</option>
+          </select>
+          <div class="help-text">Determines safety constraints and approval requirements</div>
+        </div>
+
+        <div class="form-group">
+          <label for="constraints">Constraints (Optional)</label>
+          <textarea id="constraints" placeholder="Enter constraints, one per line"></textarea>
+          <div class="help-text">Any limitations or rules the agent must follow</div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-secondary" onclick="window.location.href='/'">Cancel</button>
+          <button class="btn-primary" onclick="nextStep()">Next: Select Domain</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Select Domain -->
+      <div class="step-content" data-step="2">
+        <h2>Step 2: Select Domain</h2>
+        <p style="color: #64748b; margin-bottom: 20px;">Choose the domain and deployment target for your agent</p>
+
+        <div class="form-group">
+          <label for="agent-domain">Domain *</label>
+          <select id="agent-domain">
+            <option value="general" selected>General - General purpose agent</option>
+            <option value="robotics">Robotics - Robotic systems and automation</option>
+            <option value="healthcare">Healthcare - Medical and health services</option>
+            <option value="finance">Finance - Financial services and banking</option>
+            <option value="retail">Retail - Retail and e-commerce</option>
+            <option value="manufacturing">Manufacturing - Industrial and manufacturing</option>
+            <option value="logistics">Logistics - Supply chain and logistics</option>
+            <option value="education">Education - Educational services</option>
+            <option value="entertainment">Entertainment - Media and entertainment</option>
+            <option value="travel">Travel - Travel and hospitality</option>
+            <option value="industrial">Industrial - Industrial automation</option>
+            <option value="custom">Custom - Custom domain</option>
+          </select>
+          <div class="help-text">The domain helps tailor the agent's capabilities and tools</div>
+        </div>
+
+        <div class="form-group">
+          <label for="deployment-target">Deployment Target (Optional)</label>
+          <select id="deployment-target">
+            <option value="" selected>Auto-detect from domain</option>
+            <option value="cloud">Cloud - Cloud-based deployment</option>
+            <option value="edge">Edge - Edge computing devices</option>
+            <option value="robotics">Robotics - Robotic platforms</option>
+            <option value="humanoid">Humanoid - Humanoid robots</option>
+            <option value="software">Software - Software systems</option>
+            <option value="smartphone">Smartphone - Mobile devices</option>
+            <option value="desktop">Desktop - Desktop applications</option>
+            <option value="smart-glasses">Smart Glasses - AR/VR devices</option>
+            <option value="travel">Travel - Travel systems</option>
+            <option value="retail">Retail - Retail systems</option>
+            <option value="industrial">Industrial - Industrial systems</option>
+          </select>
+          <div class="help-text">Specific platform or device where the agent will run</div>
+        </div>
+
+        <div class="form-group">
+          <label for="device-class">Device Class (Optional)</label>
+          <select id="device-class">
+            <option value="" selected>Auto-detect from target</option>
+            <option value="cloud">Cloud</option>
+            <option value="edge">Edge</option>
+            <option value="mobile">Mobile</option>
+            <option value="wearable">Wearable</option>
+            <option value="embedded">Embedded</option>
+            <option value="robot">Robot</option>
+            <option value="humanoid">Humanoid</option>
+            <option value="iot">IoT</option>
+            <option value="desktop">Desktop</option>
+            <option value="server">Server</option>
+          </select>
+          <div class="help-text">Hardware characteristics of the deployment environment</div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-secondary" onclick="previousStep()">Previous</button>
+          <button class="btn-primary" onclick="nextStep()">Next: Select Tools</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Select Tools -->
+      <div class="step-content" data-step="3">
+        <h2>Step 3: Select Tools & Capabilities</h2>
+        <p style="color: #64748b; margin-bottom: 20px;">Choose which tools the agent can use</p>
+
+        <div class="form-group">
+          <label>Available Tools</label>
+          <div class="tool-list" id="tool-list">
+            <div class="tool-item">
+              <input type="checkbox" id="tool-http" value="http-client" checked>
+              <label for="tool-http" style="margin: 0;">HTTP Client <span class="badge low">low</span></label>
+            </div>
+            <div class="tool-item">
+              <input type="checkbox" id="tool-file" value="file-reader">
+              <label for="tool-file" style="margin: 0;">File Reader <span class="badge low">low</span></label>
+            </div>
+            <div class="tool-item">
+              <input type="checkbox" id="tool-db" value="database-query">
+              <label for="tool-db" style="margin: 0;">Database Query <span class="badge medium">medium</span></label>
+            </div>
+            <div class="tool-item">
+              <input type="checkbox" id="tool-api" value="api-caller">
+              <label for="tool-api" style="margin: 0;">API Caller <span class="badge medium">medium</span></label>
+            </div>
+            <div class="tool-item">
+              <input type="checkbox" id="tool-email" value="email-sender">
+              <label for="tool-email" style="margin: 0;">Email Sender <span class="badge medium">medium</span></label>
+            </div>
+            <div class="tool-item">
+              <input type="checkbox" id="tool-write" value="file-writer">
+              <label for="tool-write" style="margin: 0;">File Writer <span class="badge high">high</span></label>
+            </div>
+            <div class="tool-item">
+              <input type="checkbox" id="tool-exec" value="command-executor">
+              <label for="tool-exec" style="margin: 0;">Command Executor <span class="badge critical">critical</span></label>
+            </div>
+          </div>
+          <div class="help-text">Select tools based on your agent's needs and risk profile</div>
+        </div>
+
+        <!-- MCP Server Generation Section -->
+        <div class="form-group" style="margin-top: 30px; padding: 20px; background: #f8fafc; border-radius: 8px; border: 2px dashed #cbd5e1;">
+          <h3 style="margin-bottom: 10px; font-size: 18px;">🔧 MCP Server Definition</h3>
+          <p style="color: #64748b; margin-bottom: 15px; font-size: 14px;">
+            Generate a Model Context Protocol (MCP) server definition from your selected tools with automatic risk classification and governance validation.
+          </p>
+          <button class="btn-secondary" onclick="openMCPBuilder()" style="width: auto;">
+            Generate MCP Server Definition
+          </button>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-secondary" onclick="previousStep()">Previous</button>
+          <button class="btn-primary" onclick="nextStep()">Next: Configure Policies</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Configure Policies -->
+      <div class="step-content" data-step="4">
+        <h2>Step 4: Configure Policies & Guardrails</h2>
+        <p style="color: #64748b; margin-bottom: 20px;">Set safety policies and operational constraints</p>
+
+        <div class="form-group">
+          <label>Policy Requirements</label>
+          <div class="policy-list" id="policy-list">
+            <div class="policy-item">
+              <input type="checkbox" id="policy-rate" value="rate-limiting" checked>
+              <label for="policy-rate" style="margin: 0;">Rate Limiting</label>
+            </div>
+            <div class="policy-item">
+              <input type="checkbox" id="policy-timeout" value="timeout-enforcement" checked>
+              <label for="policy-timeout" style="margin: 0;">Timeout Enforcement</label>
+            </div>
+            <div class="policy-item">
+              <input type="checkbox" id="policy-validation" value="output-validation" checked>
+              <label for="policy-validation" style="margin: 0;">Output Validation</label>
+            </div>
+            <div class="policy-item">
+              <input type="checkbox" id="policy-approval" value="approval-required">
+              <label for="policy-approval" style="margin: 0;">Human Approval for High-Risk Actions</label>
+            </div>
+            <div class="policy-item">
+              <input type="checkbox" id="policy-audit" value="audit-logging" checked>
+              <label for="policy-audit" style="margin: 0;">Comprehensive Audit Logging</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Memory Policy Configuration</label>
+          <div class="help-text" style="margin-bottom: 15px;">Configure how the agent should manage its memory and context</div>
+          
+          <div class="form-group">
+            <label for="memory-goals">Memory Goals (one per line)</label>
+            <textarea id="memory-goals" placeholder="e.g., optimize for cost&#10;maximize retention&#10;enable semantic search" rows="3"></textarea>
+            <div class="help-text">Define how memory should be managed (cost optimization, retention, performance, etc.)</div>
+          </div>
+
+          <div class="form-group">
+            <label for="memory-risk-profile">Memory Risk Profile</label>
+            <select id="memory-risk-profile">
+              <option value="low">Low - Minimal retention, aggressive summarization</option>
+              <option value="medium" selected>Medium - Balanced retention and summarization</option>
+              <option value="high">High - Extended retention, cautious summarization</option>
+              <option value="critical">Critical - Maximum retention, minimal summarization</option>
+            </select>
+            <div class="help-text">Determines retention periods and summarization aggressiveness</div>
+          </div>
+
+          <div class="form-group">
+            <label for="data-classification">Data Classification (Optional)</label>
+            <select id="data-classification">
+              <option value="">None</option>
+              <option value="public">Public</option>
+              <option value="internal">Internal</option>
+              <option value="sensitive">Sensitive</option>
+              <option value="confidential">Confidential</option>
+            </select>
+            <div class="help-text">Affects encryption and audit log requirements</div>
+          </div>
+
+          <div class="form-group">
+            <label for="compliance-requirements">Compliance Requirements (Optional)</label>
+            <textarea id="compliance-requirements" placeholder="e.g., GDPR, HIPAA, SOC2" rows="2"></textarea>
+            <div class="help-text">Comma-separated list of compliance standards</div>
+          </div>
+
+          <div class="button-group" style="margin-top: 15px;">
+            <button class="btn-secondary" onclick="generateMemoryPolicy()">Generate Memory Policy</button>
+            <button class="btn-secondary" onclick="previewMemoryPolicy()" style="display: none;" id="preview-memory-btn">Preview Policy</button>
+          </div>
+
+          <div class="preview-section" id="memory-policy-preview" style="display: none; margin-top: 15px;">
+            <h3>Generated Memory Policy</h3>
+            <div class="config-preview" id="memory-policy-content"></div>
+            <div class="validation-results" id="memory-policy-validation"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="additional-context">Additional Context (Optional)</label>
+          <textarea id="additional-context" placeholder="Any additional requirements or context for the agent"></textarea>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-secondary" onclick="previousStep()">Previous</button>
+          <button class="btn-primary" onclick="generateAgent()">Generate Agent Blueprint</button>
+        </div>
+      </div>
+
+      <!-- Step 5: Blueprint Review -->
+      <div class="step-content" data-step="5">
+        <h2>Step 5: Review & Validate Agent Blueprint</h2>
+        <p style="color: #64748b; margin-bottom: 20px;">AI-generated agent blueprint ready for review</p>
+
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p>Generating agent blueprint...</p>
+        </div>
+
+        <div id="generated-content" style="display: none;">
+          <div class="preview-section">
+            <h3>Agent Configuration</h3>
+            <div class="config-preview" id="config-preview"></div>
+          </div>
+
+          <div class="validation-results" id="validation-results"></div>
+
+          <div class="button-group">
+            <button class="btn-secondary" onclick="previousStep()">Previous</button>
+            <button class="btn-success" onclick="mergeAndValidateBlueprint()">Merge & Validate</button>
+            <button class="btn-secondary" onclick="exportBlueprint()" style="display: none;" id="export-btn">Export Blueprint</button>
+            <button class="btn-primary" onclick="simulateAgent()" style="display: none;" id="simulate-btn">Run Simulation</button>
+            <button class="btn-primary" onclick="nextStep()" style="display: none;" id="deploy-btn">Proceed to Deploy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 6: Deploy -->
+      <div class="step-content" data-step="6">
+        <h2>Step 6: Deploy Agent</h2>
+        <p style="color: #64748b; margin-bottom: 20px;">Deploy your agent to the target environment</p>
+
+        <div class="form-group">
+          <label for="environment">Target Environment *</label>
+          <select id="environment">
+            <option value="development">Development</option>
+            <option value="staging">Staging</option>
+            <option value="production">Production</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="auto-promote" style="width: auto; display: inline;">
+            Auto-promote to production after staging
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="approval-required" style="width: auto; display: inline;" checked>
+            Require approval before deployment
+          </label>
+        </div>
+
+        <div class="deployment-status" id="deployment-status" style="display: none;">
+          <h3>Deployment Status</h3>
+          <div id="deployment-stages"></div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-secondary" onclick="previousStep()">Previous</button>
+          <button class="btn-success" onclick="deployAgent()">Deploy Agent</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentStep = 1;
+    let generatedBlueprint = null;
+    let validationPassed = false;
+
+    // Get authentication token
+    // In production, this should retrieve from secure storage or session
+    function getAuthToken() {
+      // Try to get token from localStorage or sessionStorage
+      const token = localStorage.getItem('authToken') || 
+                    sessionStorage.getItem('authToken') || 
+                    'demo-token';
+      return token;
+    }
+
+    // HTML escape function to prevent XSS
+    function escapeHtml(unsafe) {
+      if (unsafe === null || unsafe === undefined) return '';
+      return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Safe number parsing with validation
+    function safeParseInt(value, defaultValue = 0) {
+      const parsed = parseInt(value);
+      return isNaN(parsed) || !isFinite(parsed) ? defaultValue : Math.max(0, parsed);
+    }
+
+    function safeParseFloat(value, defaultValue = 0) {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) || !isFinite(parsed) ? defaultValue : Math.max(0, Math.min(1, parsed));
+    }
+
+    function nextStep() {
+      if (currentStep < 6) {
+        // Validate current step before proceeding
+        if (currentStep === 1 && !validateStep1()) return;
+        
+        currentStep++;
+        updateUI();
+      }
+    }
+
+    function previousStep() {
+      if (currentStep > 1) {
+        currentStep--;
+        updateUI();
+      }
+    }
+
+    function updateUI() {
+      // Update step indicators
+      document.querySelectorAll('.step').forEach((step, index) => {
+        const stepNum = index + 1;
+        step.classList.remove('active', 'completed');
+        
+        if (stepNum === currentStep) {
+          step.classList.add('active');
+        } else if (stepNum < currentStep) {
+          step.classList.add('completed');
+        }
+      });
+
+      // Update step content
+      document.querySelectorAll('.step-content').forEach((content, index) => {
+        content.classList.remove('active');
+        if (index + 1 === currentStep) {
+          content.classList.add('active');
+        }
+      });
+    }
+
+    function validateStep1() {
+      const goal = document.getElementById('agent-goal').value.trim();
+      if (goal.length < 10) {
+        alert('Please provide a more detailed agent goal (at least 10 characters)');
+        return false;
+      }
+      return true;
+    }
+
+    function getSelectedTools() {
+      const tools = [];
+      document.querySelectorAll('.tool-item input[type="checkbox"]:checked').forEach(checkbox => {
+        tools.push(checkbox.value);
+      });
+      return tools;
+    }
+
+    function getSelectedPolicies() {
+      const policies = [];
+      document.querySelectorAll('.policy-item input[type="checkbox"]:checked').forEach(checkbox => {
+        policies.push(checkbox.value);
+      });
+      return policies;
+    }
+
+    async function generateAgent() {
+      const goal = document.getElementById('agent-goal').value.trim();
+      const riskProfile = document.getElementById('risk-profile').value;
+      const constraints = document.getElementById('constraints').value
+        .split('\n')
+        .map(c => c.trim())
+        .filter(c => c.length > 0);
+      const preferredTools = getSelectedTools();
+      const policyRequirements = getSelectedPolicies();
+      const additionalContext = document.getElementById('additional-context').value.trim();
+      
+      // Get domain information
+      const domain = document.getElementById('agent-domain').value;
+      const deploymentTarget = document.getElementById('deployment-target').value || undefined;
+      const deviceClass = document.getElementById('device-class').value || undefined;
+
+      // Show loading
+      document.getElementById('loading').classList.add('active');
+      document.getElementById('generated-content').style.display = 'none';
+
+      // Move to step 5 (Blueprint Review)
+      currentStep = 5;
+      updateUI();
+
+      try {
+        const response = await fetch('/api/agents/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}` // In production, use real auth
+          },
+          body: JSON.stringify({
+            goal,
+            riskProfile,
+            constraints,
+            preferredTools,
+            policyRequirements,
+            additionalContext: additionalContext || undefined,
+            domain,
+            deploymentTarget,
+            deviceClass
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to generate agent');
+        }
+
+        generatedBlueprint = result.blueprint;
+        displayBlueprint(generatedBlueprint);
+        
+        // Hide loading, show content
+        document.getElementById('loading').classList.remove('active');
+        document.getElementById('generated-content').style.display = 'block';
+      } catch (error) {
+        alert('Error generating agent: ' + error.message);
+        previousStep();
+      }
+    }
+
+    function displayBlueprint(blueprint) {
+      const preview = document.getElementById('config-preview');
+      preview.textContent = JSON.stringify(blueprint, null, 2);
+    }
+
+    async function validateAgent() {
+      if (!generatedBlueprint) return;
+
+      const resultsDiv = document.getElementById('validation-results');
+      resultsDiv.innerHTML = '<p>Validating agent configuration...</p>';
+
+      try {
+        const response = await fetch('/api/agents/validate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({ blueprint: generatedBlueprint })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Validation failed');
+        }
+
+        displayValidationResults(result);
+        validationPassed = result.valid;
+
+        if (result.valid) {
+          document.getElementById('simulate-btn').style.display = 'inline-block';
+          document.getElementById('deploy-btn').style.display = 'inline-block';
+        }
+      } catch (error) {
+        resultsDiv.innerHTML = `<div class="validation-item error">
+          <strong>Error:</strong> ${error.message}
+        </div>`;
+      }
+    }
+
+    function displayValidationResults(result) {
+      const resultsDiv = document.getElementById('validation-results');
+      
+      if (result.valid && result.issues.length === 0 && !result.crvResult && !result.policyResult) {
+        resultsDiv.innerHTML = `<div class="validation-item success">
+          <strong>✓ Validation Passed</strong> - Agent configuration is valid and ready for deployment
+        </div>`;
+        return;
+      }
+
+      let html = '<h3>Validation Results:</h3>';
+      
+      if (result.valid) {
+        html += '<div class="validation-item success"><strong>✓ Overall: Passed</strong></div>';
+      } else {
+        html += '<div class="validation-item error"><strong>✗ Overall: Failed</strong></div>';
+      }
+
+      // Component-based validation display
+      html += '<div style="margin-top: 20px;">';
+
+      // World Model Component
+      html += '<div style="border-left: 4px solid #3b82f6; padding-left: 15px; margin-bottom: 20px;">';
+      html += '<h4 style="color: #3b82f6; margin-bottom: 10px;">🌍 World Model Component</h4>';
+      
+      const worldModelViolations = [];
+      if (result.crvResult) {
+        result.crvResult.validationResults.forEach(vr => {
+          if (vr.reason?.toLowerCase().includes('world model') || 
+              vr.reason?.toLowerCase().includes('causal') ||
+              vr.reason?.toLowerCase().includes('constraint') ||
+              vr.metadata?.component === 'world-model') {
+            worldModelViolations.push(vr);
+          }
+        });
+      }
+      
+      if (worldModelViolations.length > 0) {
+        worldModelViolations.forEach(vr => {
+          const severity = vr.valid ? 'success' : 'error';
+          html += `<div class="validation-item ${severity}" style="margin-left: 0;">
+            ${vr.valid ? '✓' : '✗'} ${escapeHtml(vr.reason || 'Validation check')}
+            ${vr.confidence ? ` (Confidence: ${(safeParseFloat(vr.confidence) * 100).toFixed(1)}%)` : ''}
+            ${vr.failure_code ? `<br><small>Code: ${escapeHtml(vr.failure_code)}</small>` : ''}
+          </div>`;
+        });
+      } else {
+        html += '<div class="validation-item success" style="margin-left: 0;">✓ No world model violations</div>';
+      }
+      html += '</div>';
+
+      // Memory Component
+      html += '<div style="border-left: 4px solid #8b5cf6; padding-left: 15px; margin-bottom: 20px;">';
+      html += '<h4 style="color: #8b5cf6; margin-bottom: 10px;">🧠 Memory Component</h4>';
+      
+      const memoryViolations = [];
+      if (result.crvResult) {
+        result.crvResult.validationResults.forEach(vr => {
+          if (vr.reason?.toLowerCase().includes('memory') || 
+              vr.reason?.toLowerCase().includes('retention') ||
+              vr.reason?.toLowerCase().includes('compression') ||
+              vr.reason?.toLowerCase().includes('encryption') ||
+              vr.metadata?.component === 'memory') {
+            memoryViolations.push(vr);
+          }
+        });
+      }
+      
+      if (memoryViolations.length > 0) {
+        memoryViolations.forEach(vr => {
+          const severity = vr.valid ? 'success' : 'error';
+          html += `<div class="validation-item ${severity}" style="margin-left: 0;">
+            ${vr.valid ? '✓' : '✗'} ${escapeHtml(vr.reason || 'Validation check')}
+            ${vr.confidence ? ` (Confidence: ${(safeParseFloat(vr.confidence) * 100).toFixed(1)}%)` : ''}
+            ${vr.failure_code ? `<br><small>Code: ${escapeHtml(vr.failure_code)}</small>` : ''}
+          </div>`;
+        });
+      } else {
+        html += '<div class="validation-item success" style="margin-left: 0;">✓ No memory violations</div>';
+      }
+      html += '</div>';
+
+      // MCP Component
+      html += '<div style="border-left: 4px solid #f59e0b; padding-left: 15px; margin-bottom: 20px;">';
+      html += '<h4 style="color: #f59e0b; margin-bottom: 10px;">🔧 MCP Component</h4>';
+      
+      const mcpViolations = [];
+      if (result.policyResult && result.policyResult.metadata?.mcpAction) {
+        mcpViolations.push({
+          approved: result.policyResult.approved,
+          reason: result.policyResult.reason,
+          decision: result.policyResult.decision,
+          metadata: result.policyResult.metadata,
+        });
+      }
+      if (result.crvResult) {
+        result.crvResult.validationResults.forEach(vr => {
+          if (vr.reason?.toLowerCase().includes('mcp') ||
+              vr.metadata?.component === 'mcp') {
+            mcpViolations.push(vr);
+          }
+        });
+      }
+      
+      if (mcpViolations.length > 0) {
+        mcpViolations.forEach(item => {
+          if (item.approved !== undefined) {
+            // Policy result
+            const severity = item.approved ? 'success' : 'error';
+            html += `<div class="validation-item ${severity}" style="margin-left: 0;">
+              ${item.approved ? '✓' : '✗'} ${escapeHtml(item.reason || 'MCP policy check')}
+              ${item.metadata?.mcpServerName ? `<br><small>Server: ${escapeHtml(item.metadata.mcpServerName)}</small>` : ''}
+              ${item.metadata?.mcpActionName ? `<br><small>Action: ${escapeHtml(item.metadata.mcpActionName)}</small>` : ''}
+              ${item.metadata?.requiresCRV ? '<br><small>Requires CRV validation</small>' : ''}
+            </div>`;
+          } else {
+            // CRV result
+            const severity = item.valid ? 'success' : 'error';
+            html += `<div class="validation-item ${severity}" style="margin-left: 0;">
+              ${item.valid ? '✓' : '✗'} ${escapeHtml(item.reason || 'Validation check')}
+              ${item.confidence ? ` (Confidence: ${(safeParseFloat(item.confidence) * 100).toFixed(1)}%)` : ''}
+            </div>`;
+          }
+        });
+      } else {
+        html += '<div class="validation-item success" style="margin-left: 0;">✓ No MCP violations</div>';
+      }
+      html += '</div>';
+
+      // General Policy Component
+      if (result.policyResult && !result.policyResult.metadata?.mcpAction) {
+        html += '<div style="border-left: 4px solid #10b981; padding-left: 15px; margin-bottom: 20px;">';
+        html += '<h4 style="color: #10b981; margin-bottom: 10px;">🛡️ General Policy</h4>';
+        
+        const severity = result.policyResult.approved ? 'success' : 'error';
+        html += `<div class="validation-item ${severity}" style="margin-left: 0;">
+          ${result.policyResult.approved ? '✓' : '✗'} ${escapeHtml(result.policyResult.decision || 'Policy check')}
+          ${result.policyResult.reason ? `<br><small>${escapeHtml(result.policyResult.reason)}</small>` : ''}
+        </div>`;
+        html += '</div>';
+      }
+
+      // Other CRV validations not categorized above
+      const otherCRVValidations = [];
+      if (result.crvResult) {
+        result.crvResult.validationResults.forEach(vr => {
+          if (!vr.reason?.toLowerCase().includes('world model') &&
+              !vr.reason?.toLowerCase().includes('causal') &&
+              !vr.reason?.toLowerCase().includes('constraint') &&
+              !vr.reason?.toLowerCase().includes('memory') &&
+              !vr.reason?.toLowerCase().includes('retention') &&
+              !vr.reason?.toLowerCase().includes('compression') &&
+              !vr.reason?.toLowerCase().includes('encryption') &&
+              !vr.reason?.toLowerCase().includes('mcp') &&
+              vr.metadata?.component !== 'world-model' &&
+              vr.metadata?.component !== 'memory' &&
+              vr.metadata?.component !== 'mcp') {
+            otherCRVValidations.push(vr);
+          }
+        });
+      }
+
+      if (otherCRVValidations.length > 0) {
+        html += '<div style="border-left: 4px solid #6b7280; padding-left: 15px; margin-bottom: 20px;">';
+        html += '<h4 style="color: #6b7280; margin-bottom: 10px;">📋 Other CRV Validations</h4>';
+        otherCRVValidations.forEach(vr => {
+          const severity = vr.valid ? 'success' : 'error';
+          html += `<div class="validation-item ${severity}" style="margin-left: 0;">
+            ${vr.valid ? '✓' : '✗'} ${escapeHtml(vr.reason || 'Validation check')}
+            ${vr.confidence ? ` (Confidence: ${(safeParseFloat(vr.confidence) * 100).toFixed(1)}%)` : ''}
+          </div>`;
+        });
+        html += '</div>';
+      }
+
+      html += '</div>'; // Close component sections
+
+      // Display other validation issues
+      if (result.issues && result.issues.length > 0) {
+        html += '<h4 style="margin-top: 15px;">⚠️ Configuration Issues:</h4>';
+        result.issues.forEach(issue => {
+          html += `<div class="validation-item ${issue.severity}">
+            <strong>${issue.severity.toUpperCase()}:</strong> ${escapeHtml(issue.message)}
+            ${issue.field ? ` (Field: ${escapeHtml(issue.field)})` : ''}
+          </div>`;
+        });
+      }
+
+      resultsDiv.innerHTML = html;
+    }
+
+    async function simulateAgent() {
+      if (!generatedBlueprint) return;
+
+      const resultsDiv = document.getElementById('validation-results');
+      const originalContent = resultsDiv.innerHTML;
+      resultsDiv.innerHTML = '<p>Running simulation...</p>';
+
+      try {
+        const response = await fetch('/api/agents/simulate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({
+            blueprint: generatedBlueprint,
+            testScenario: {
+              description: 'Test agent execution flow',
+              inputs: { test: true }
+            },
+            dryRun: true
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Simulation failed');
+        }
+
+        displaySimulationResults(result, originalContent);
+      } catch (error) {
+        resultsDiv.innerHTML = originalContent + `<div class="validation-item error">
+          <strong>Simulation Error:</strong> ${error.message}
+        </div>`;
+      }
+    }
+
+    function displaySimulationResults(result, originalContent) {
+      const resultsDiv = document.getElementById('validation-results');
+      
+      let html = originalContent + '<h3 style="margin-top: 20px;">Simulation Results:</h3>';
+      
+      if (result.success) {
+        html += '<div class="validation-item success"><strong>✓ Simulation Successful</strong></div>';
+        html += `<div class="validation-item info">
+          <strong>Execution Time:</strong> ${result.executionTime}ms
+        </div>`;
+        
+        // Display metrics summary (escape numeric values for safety)
+        html += `<div class="validation-item info">
+          <strong>Metrics:</strong><br>
+          - Tool Executions: ${safeParseInt(result.metrics.toolExecutions)}<br>
+          - Tools Blocked: ${safeParseInt(result.metrics.toolsBlocked)}<br>
+          - Policy Checks: ${safeParseInt(result.metrics.policyChecks)}<br>
+          - CRV Validations: ${safeParseInt(result.metrics.crvValidations)}<br>
+          - Side Effects Captured: ${safeParseInt(result.metrics.sideEffectsCaptured)}
+        </div>`;
+        
+        // Display blocked steps if any
+        if (result.blockedSteps && result.blockedSteps.length > 0) {
+          html += '<h4 style="margin-top: 15px; color: #f59e0b;">⚠️ Blocked Steps:</h4>';
+          result.blockedSteps.forEach(blocked => {
+            html += `<div class="validation-item warning">
+              <strong>Step ${safeParseInt(blocked.step)}${blocked.tool ? ` - ${escapeHtml(blocked.tool)}` : ''}:</strong><br>
+              ${escapeHtml(blocked.reason)}<br>
+              <small>${new Date(blocked.timestamp).toLocaleTimeString()}</small>
+            </div>`;
+          });
+        }
+        
+        // Display execution trace
+        if (result.trace && result.trace.length > 0) {
+          html += '<h4 style="margin-top: 15px;">Execution Trace:</h4>';
+          html += '<div style="background: #f8fafc; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto;">';
+          result.trace.forEach(step => {
+            const statusIcon = step.status === 'completed' ? '✓' : 
+                              step.status === 'blocked' ? '⚠️' : '✗';
+            const statusColor = step.status === 'completed' ? '#10b981' : 
+                               step.status === 'blocked' ? '#f59e0b' : '#ef4444';
+            html += `<div style="padding: 5px; border-left: 3px solid ${statusColor}; margin-bottom: 5px; padding-left: 10px;">
+              <strong>${statusIcon} Step ${safeParseInt(step.step)}:</strong> ${escapeHtml(step.action)}${step.tool ? ` (${escapeHtml(step.tool)})` : ''}
+              ${step.blockReason ? `<br><small style="color: #f59e0b;">⚠️ ${escapeHtml(step.blockReason)}</small>` : ''}
+              <br><small style="color: #64748b;">${new Date(step.timestamp).toLocaleTimeString()}</small>
+            </div>`;
+          });
+          html += '</div>';
+        }
+        
+        // Display tool calls
+        if (result.toolCalls && result.toolCalls.length > 0) {
+          html += '<h4 style="margin-top: 15px;">Tool Calls:</h4>';
+          html += '<div style="background: #f8fafc; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto;">';
+          result.toolCalls.forEach(call => {
+            const statusBadge = call.status === 'executed' ? '<span class="badge" style="background: #dbeafe; color: #1e40af;">Executed</span>' :
+                               call.status === 'simulated' ? '<span class="badge" style="background: #fef3c7; color: #92400e;">Simulated</span>' :
+                               '<span class="badge" style="background: #fecaca; color: #991b1b;">Blocked</span>';
+            html += `<div style="padding: 5px; margin-bottom: 5px;">
+              <strong>${escapeHtml(call.toolName)}</strong> ${statusBadge}<br>
+              <small style="color: #64748b;">${new Date(call.timestamp).toLocaleTimeString()}</small>
+            </div>`;
+          });
+          html += '</div>';
+        }
+        
+        // Display policy decisions
+        if (result.policyDecisions && result.policyDecisions.length > 0) {
+          html += '<h4 style="margin-top: 15px;">Policy Decisions:</h4>';
+          html += '<div style="background: #f8fafc; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto;">';
+          result.policyDecisions.forEach(decision => {
+            const decisionColor = decision.decision === 'allow' ? '#10b981' : 
+                                 decision.decision === 'deny' ? '#ef4444' : '#f59e0b';
+            html += `<div style="padding: 5px; border-left: 3px solid ${decisionColor}; margin-bottom: 5px; padding-left: 10px;">
+              <strong>${escapeHtml(decision.policyName)}:</strong> ${escapeHtml(String(decision.decision).toUpperCase())}
+              ${decision.reason ? `<br><small>${escapeHtml(decision.reason)}</small>` : ''}
+              <br><small style="color: #64748b;">${new Date(decision.timestamp).toLocaleTimeString()}</small>
+            </div>`;
+          });
+          html += '</div>';
+        }
+        
+        // Display CRV outcomes
+        if (result.crvOutcomes && result.crvOutcomes.length > 0) {
+          html += '<h4 style="margin-top: 15px;">CRV Validation Outcomes:</h4>';
+          html += '<div style="background: #f8fafc; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto;">';
+          result.crvOutcomes.forEach(outcome => {
+            const outcomeColor = outcome.passed ? '#10b981' : '#ef4444';
+            html += `<div style="padding: 5px; border-left: 3px solid ${outcomeColor}; margin-bottom: 5px; padding-left: 10px;">
+              <strong>${escapeHtml(outcome.checkName)}:</strong> ${outcome.passed ? 'PASSED' : 'FAILED'}
+              ${outcome.confidence ? ` (Confidence: ${(safeParseFloat(outcome.confidence) * 100).toFixed(1)}%)` : ''}
+              ${outcome.reason ? `<br><small>${escapeHtml(outcome.reason)}</small>` : ''}
+              <br><small style="color: #64748b;">${new Date(outcome.timestamp).toLocaleTimeString()}</small>
+            </div>`;
+          });
+          html += '</div>';
+        }
+        
+        // Display side effects
+        if (result.sideEffects && result.sideEffects.length > 0) {
+          html += '<h4 style="margin-top: 15px;">Side Effects:</h4>';
+          result.sideEffects.forEach(effect => {
+            html += `<div class="validation-item info">
+              <strong>${escapeHtml(effect.type)}:</strong> ${escapeHtml(effect.description)}
+              ${effect.captured ? ' <span class="badge" style="background: #dbeafe; color: #1e40af;">Captured</span>' : ''}
+            </div>`;
+          });
+        }
+        
+        // Display simulation logs
+        if (result.logs) {
+          html += '<div style="margin-top: 15px;"><strong>Simulation Logs:</strong>';
+          html += '<div style="background: #1e293b; color: #e2e8f0; padding: 10px; border-radius: 4px; margin-top: 5px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">';
+          result.logs.forEach(log => {
+            const logColor = log.includes('[SUCCESS]') ? '#10b981' :
+                            log.includes('[WARNING]') ? '#f59e0b' :
+                            log.includes('[ERROR]') || log.includes('[FAILED]') ? '#ef4444' :
+                            log.includes('[BLOCKED]') ? '#f59e0b' : '#e2e8f0';
+            html += `<div style="color: ${logColor};">${escapeHtml(log)}</div>`;
+          });
+          html += '</div></div>';
+        }
+      } else {
+        html += '<div class="validation-item error"><strong>✗ Simulation Failed</strong></div>';
+      }
+
+      resultsDiv.innerHTML = html;
+    }
+
+    async function deployAgent() {
+      if (!generatedBlueprint) {
+        alert('No agent blueprint to deploy');
+        return;
+      }
+
+      if (!validationPassed) {
+        if (!confirm('Agent validation has not passed. Deploy anyway?')) {
+          return;
+        }
+      }
+
+      const environment = document.getElementById('environment').value;
+      const autoPromote = document.getElementById('auto-promote').checked;
+      const approvalRequired = document.getElementById('approval-required').checked;
+
+      const statusDiv = document.getElementById('deployment-status');
+      statusDiv.style.display = 'block';
+      statusDiv.innerHTML = '<p>Deploying agent...</p>';
+
+      try {
+        const response = await fetch('/api/agents/deploy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({
+            blueprint: generatedBlueprint,
+            environment,
+            autoPromote,
+            approvalRequired
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Deployment failed');
+        }
+
+        displayDeploymentStatus(result);
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="validation-item error">
+          <strong>Deployment Error:</strong> ${error.message}
+        </div>`;
+      }
+    }
+
+    function displayDeploymentStatus(result) {
+      const statusDiv = document.getElementById('deployment-status');
+      
+      let html = '<h3>Deployment Status</h3>';
+      html += `<p><strong>Deployment ID:</strong> ${result.deploymentId}</p>`;
+      html += `<p><strong>Environment:</strong> ${result.environment}</p>`;
+      html += `<p><strong>Status:</strong> ${result.status}</p>`;
+      
+      html += '<div id="deployment-stages" style="margin-top: 15px;">';
+      
+      const stages = [
+        { name: 'Register', data: result.stages.register },
+        { name: 'Stage', data: result.stages.stage },
+        { name: 'Promote', data: result.stages.promote }
+      ];
+
+      stages.forEach(stage => {
+        const icon = stage.data.status === 'completed' ? '✓' : 
+                     stage.data.status === 'pending' ? '⏳' : '✗';
+        const iconClass = stage.data.status;
+        
+        html += `<div class="stage-item">
+          <div class="stage-icon ${iconClass}">${icon}</div>
+          <div>
+            <strong>${stage.name}</strong><br>
+            <small>${stage.data.message}</small>
+            ${stage.data.timestamp ? `<br><small>${new Date(stage.data.timestamp).toLocaleString()}</small>` : ''}
+          </div>
+        </div>`;
+      });
+
+      html += '</div>';
+      
+      if (result.status === 'completed' || result.stages.register.status === 'completed') {
+        html += '<div class="validation-item success" style="margin-top: 15px;"><strong>✓ Agent deployed successfully!</strong></div>';
+      }
+
+      statusDiv.innerHTML = html;
+    }
+
+    // Version History Functions
+    async function showVersionHistory() {
+      const modal = document.getElementById('version-history-modal');
+      const content = document.getElementById('version-history-content');
+      
+      modal.style.display = 'flex';
+      content.innerHTML = '<p>Loading agents...</p>';
+      
+      try {
+        const response = await fetch('/api/agents/registry', {
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`
+          }
+        });
+        
+        const agents = await response.json();
+        
+        if (agents.length === 0) {
+          content.innerHTML = '<p>No agents registered yet.</p>';
+          return;
+        }
+        
+        let html = '<h3>Registered Agents</h3>';
+        html += '<div style="margin-top: 20px;">';
+        
+        for (const agentId of agents) {
+          html += `<div class="agent-card" onclick="showAgentVersions('${escapeHtml(agentId)}')">
+            <strong>Agent ID:</strong> ${escapeHtml(agentId)}<br>
+            <small style="color: #64748b;">Click to view versions</small>
+          </div>`;
+        }
+        
+        html += '</div>';
+        content.innerHTML = html;
+      } catch (error) {
+        content.innerHTML = `<div class="validation-item error">Error loading agents: ${error.message}</div>`;
+      }
+    }
+    
+    async function showAgentVersions(agentId) {
+      const content = document.getElementById('version-history-content');
+      content.innerHTML = '<p>Loading versions...</p>';
+      
+      try {
+        const response = await fetch(`/api/agents/registry/${encodeURIComponent(agentId)}/versions`, {
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`
+          }
+        });
+        
+        const revisions = await response.json();
+        
+        let html = `<h3>Version History: ${escapeHtml(agentId)}</h3>`;
+        html += '<button class="btn-secondary" onclick="showVersionHistory()" style="margin-bottom: 15px;">← Back to Agents</button>';
+        
+        if (revisions.length === 0) {
+          html += '<p>No versions found.</p>';
+          content.innerHTML = html;
+          return;
+        }
+        
+        html += '<div style="margin-top: 20px;">';
+        
+        revisions.forEach((revision, index) => {
+          const isLatest = index === 0;
+          html += `<div class="version-card ${isLatest ? 'latest' : ''}">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <div>
+                <strong>Version ${escapeHtml(revision.version)}</strong>
+                ${isLatest ? '<span class="badge" style="background: #10b981; color: white; margin-left: 10px;">Latest</span>' : ''}
+                <br><small style="color: #64748b;">${new Date(revision.timestamp).toLocaleString()}</small>
+                <br><small style="color: #64748b;">Author: ${escapeHtml(revision.author)}</small>
+                ${revision.changeDescription ? `<br><small>${escapeHtml(revision.changeDescription)}</small>` : ''}
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn-secondary" onclick="viewRevisionDetails('${escapeHtml(agentId)}', '${escapeHtml(revision.version)}')">View</button>
+                ${!isLatest ? `<button class="btn-primary" onclick="rollbackToVersion('${escapeHtml(agentId)}', '${escapeHtml(revision.version)}')">Rollback</button>` : ''}
+                ${index < revisions.length - 1 ? `<button class="btn-secondary" onclick="compareVersions('${escapeHtml(agentId)}', '${escapeHtml(revision.version)}', '${escapeHtml(revisions[index + 1].version)}')">Compare</button>` : ''}
+              </div>
+            </div>
+          </div>`;
+        });
+        
+        html += '</div>';
+        content.innerHTML = html;
+      } catch (error) {
+        content.innerHTML = `<div class="validation-item error">Error loading versions: ${error.message}</div>`;
+      }
+    }
+    
+    async function viewRevisionDetails(agentId, version) {
+      const content = document.getElementById('version-history-content');
+      content.innerHTML = '<p>Loading revision details...</p>';
+      
+      try {
+        const response = await fetch(`/api/agents/registry/${encodeURIComponent(agentId)}/versions/${encodeURIComponent(version)}`, {
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`
+          }
+        });
+        
+        const revision = await response.json();
+        
+        let html = `<h3>Revision Details: ${escapeHtml(agentId)} v${escapeHtml(version)}</h3>`;
+        html += `<button class="btn-secondary" onclick="showAgentVersions('${escapeHtml(agentId)}')" style="margin-bottom: 15px;">← Back to Versions</button>`;
+        
+        html += '<div class="preview-section">';
+        html += '<h4>Blueprint Configuration</h4>';
+        html += `<div class="config-preview">${escapeHtml(JSON.stringify(revision.blueprint, null, 2))}</div>`;
+        html += '</div>';
+        
+        if (revision.diff) {
+          html += '<div class="preview-section" style="margin-top: 20px;">';
+          html += '<h4>Changes from Previous Version</h4>';
+          
+          if (Object.keys(revision.diff.added).length > 0) {
+            html += '<p><strong style="color: #10b981;">Added:</strong></p>';
+            html += `<pre style="background: #f0fdf4; padding: 10px; border-radius: 4px; overflow-x: auto;">${escapeHtml(JSON.stringify(revision.diff.added, null, 2))}</pre>`;
+          }
+          
+          if (Object.keys(revision.diff.modified).length > 0) {
+            html += '<p><strong style="color: #f59e0b;">Modified:</strong></p>';
+            html += `<pre style="background: #fffbeb; padding: 10px; border-radius: 4px; overflow-x: auto;">${escapeHtml(JSON.stringify(revision.diff.modified, null, 2))}</pre>`;
+          }
+          
+          if (Object.keys(revision.diff.removed).length > 0) {
+            html += '<p><strong style="color: #ef4444;">Removed:</strong></p>';
+            html += `<pre style="background: #fee; padding: 10px; border-radius: 4px; overflow-x: auto;">${escapeHtml(JSON.stringify(revision.diff.removed, null, 2))}</pre>`;
+          }
+          
+          html += '</div>';
+        }
+        
+        content.innerHTML = html;
+      } catch (error) {
+        content.innerHTML = `<div class="validation-item error">Error loading revision: ${error.message}</div>`;
+      }
+    }
+    
+    async function compareVersions(agentId, versionA, versionB) {
+      const content = document.getElementById('version-history-content');
+      content.innerHTML = '<p>Comparing versions...</p>';
+      
+      try {
+        const response = await fetch(`/api/agents/registry/${encodeURIComponent(agentId)}/diff?versionA=${encodeURIComponent(versionA)}&versionB=${encodeURIComponent(versionB)}`, {
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`
+          }
+        });
+        
+        const diff = await response.json();
+        
+        let html = `<h3>Compare Versions: ${escapeHtml(agentId)}</h3>`;
+        html += `<p><strong>Version ${escapeHtml(versionA)}</strong> vs <strong>Version ${escapeHtml(versionB)}</strong></p>`;
+        html += `<button class="btn-secondary" onclick="showAgentVersions('${escapeHtml(agentId)}')" style="margin-bottom: 15px;">← Back to Versions</button>`;
+        
+        html += '<div class="preview-section">';
+        
+        if (Object.keys(diff.added).length > 0) {
+          html += '<h4 style="color: #10b981;">Added in ' + escapeHtml(versionA) + '</h4>';
+          html += `<pre style="background: #f0fdf4; padding: 10px; border-radius: 4px; overflow-x: auto;">${escapeHtml(JSON.stringify(diff.added, null, 2))}</pre>`;
+        }
+        
+        if (Object.keys(diff.modified).length > 0) {
+          html += '<h4 style="color: #f59e0b; margin-top: 20px;">Modified</h4>';
+          html += `<pre style="background: #fffbeb; padding: 10px; border-radius: 4px; overflow-x: auto;">${escapeHtml(JSON.stringify(diff.modified, null, 2))}</pre>`;
+        }
+        
+        if (Object.keys(diff.removed).length > 0) {
+          html += '<h4 style="color: #ef4444; margin-top: 20px;">Removed from ' + escapeHtml(versionA) + '</h4>';
+          html += `<pre style="background: #fee; padding: 10px; border-radius: 4px; overflow-x: auto;">${escapeHtml(JSON.stringify(diff.removed, null, 2))}</pre>`;
+        }
+        
+        if (Object.keys(diff.added).length === 0 && Object.keys(diff.modified).length === 0 && Object.keys(diff.removed).length === 0) {
+          html += '<p>No differences found between these versions.</p>';
+        }
+        
+        html += '</div>';
+        content.innerHTML = html;
+      } catch (error) {
+        content.innerHTML = `<div class="validation-item error">Error comparing versions: ${error.message}</div>`;
+      }
+    }
+    
+    async function rollbackToVersion(agentId, version) {
+      if (!confirm(`Are you sure you want to rollback ${agentId} to version ${version}? This will create a new revision.`)) {
+        return;
+      }
+      
+      const reason = prompt('Reason for rollback (optional):');
+      
+      try {
+        const response = await fetch(`/api/agents/registry/${encodeURIComponent(agentId)}/rollback`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({
+            targetVersion: version,
+            reason
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Rollback failed');
+        }
+        
+        alert(`Successfully rolled back to version ${version}. New version: ${result.version}`);
+        showAgentVersions(agentId);
+      } catch (error) {
+        alert(`Error rolling back: ${error.message}`);
+      }
+    }
+    
+    function closeVersionHistory() {
+      document.getElementById('version-history-modal').style.display = 'none';
+    }
+
+    // Memory Policy Generation Functions
+    let generatedMemoryPolicy = null;
+
+    async function generateMemoryPolicy() {
+      const goalsText = document.getElementById('memory-goals').value.trim();
+      const riskProfile = document.getElementById('memory-risk-profile').value;
+      const dataClassification = document.getElementById('data-classification').value;
+      const complianceText = document.getElementById('compliance-requirements').value.trim();
+
+      // Parse goals (one per line)
+      const goals = goalsText.split('\n')
+        .map(g => g.trim())
+        .filter(g => g.length > 0);
+
+      if (goals.length === 0) {
+        alert('Please specify at least one memory goal');
+        return;
+      }
+
+      // Parse compliance requirements (comma-separated)
+      const complianceRequirements = complianceText
+        ? complianceText.split(',').map(c => c.trim()).filter(c => c.length > 0)
+        : [];
+
+      const config = {
+        goals,
+        riskProfile,
+        dataClassification: dataClassification || undefined,
+        complianceRequirements: complianceRequirements.length > 0 ? complianceRequirements : undefined,
+      };
+
+      try {
+        const response = await fetch('/api/memory-engine/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify(config)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to generate memory policy');
+        }
+
+        generatedMemoryPolicy = result.policy;
+
+        // Display preview
+        const previewSection = document.getElementById('memory-policy-preview');
+        const previewContent = document.getElementById('memory-policy-content');
+        
+        previewContent.textContent = result.preview;
+        previewSection.style.display = 'block';
+
+        // Show preview button
+        document.getElementById('preview-memory-btn').style.display = 'inline-block';
+
+        // Validate the policy automatically
+        validateMemoryPolicy();
+
+        alert('Memory policy generated successfully!');
+      } catch (error) {
+        alert(`Error generating memory policy: ${error.message}`);
+      }
+    }
+
+    async function validateMemoryPolicy() {
+      if (!generatedMemoryPolicy) {
+        alert('Please generate a memory policy first');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/memory-engine/validate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify(generatedMemoryPolicy)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to validate memory policy');
+        }
+
+        // Display validation results
+        const validationDiv = document.getElementById('memory-policy-validation');
+        let html = '';
+
+        if (result.valid) {
+          html += '<div class="validation-item success">✓ Memory policy is valid and meets all governance thresholds</div>';
+        } else {
+          html += '<div class="validation-item error">✗ Memory policy validation failed</div>';
+        }
+
+        if (result.errors && result.errors.length > 0) {
+          result.errors.forEach(error => {
+            html += `<div class="validation-item error">✗ ${escapeHtml(error)}</div>`;
+          });
+        }
+
+        if (result.warnings && result.warnings.length > 0) {
+          result.warnings.forEach(warning => {
+            html += `<div class="validation-item warning">⚠ ${escapeHtml(warning)}</div>`;
+          });
+        }
+
+        validationDiv.innerHTML = html;
+      } catch (error) {
+        const validationDiv = document.getElementById('memory-policy-validation');
+        validationDiv.innerHTML = `<div class="validation-item error">Error validating policy: ${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    function previewMemoryPolicy() {
+      if (!generatedMemoryPolicy) {
+        alert('Please generate a memory policy first');
+        return;
+      }
+
+      const previewSection = document.getElementById('memory-policy-preview');
+      previewSection.style.display = previewSection.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Blueprint merging and export functions
+    async function mergeAndValidateBlueprint() {
+      if (!generatedBlueprint) {
+        alert('No agent blueprint to merge');
+        return;
+      }
+
+      const resultsDiv = document.getElementById('validation-results');
+      resultsDiv.innerHTML = '<p>Merging blueprint with world model, memory engine, and MCP configs...</p>';
+
+      try {
+        // Step 1: Merge blueprint
+        const mergeResponse = await fetch('/api/agents/blueprint/merge', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({
+            blueprint: generatedBlueprint,
+            options: {
+              includeWorldModel: true,
+              includeMemoryEngine: true,
+              includeMCPServer: true,
+            }
+          })
+        });
+
+        const mergeResult = await mergeResponse.json();
+
+        if (!mergeResponse.ok) {
+          throw new Error(mergeResult.error || 'Failed to merge blueprint');
+        }
+
+        // Update with merged blueprint
+        generatedBlueprint = mergeResult.blueprint;
+        displayBlueprint(generatedBlueprint);
+
+        resultsDiv.innerHTML = '<p>Validating merged blueprint...</p>';
+
+        // Step 2: Validate merged blueprint
+        const validateResponse = await fetch('/api/agents/blueprint/validate-merged', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({ blueprint: generatedBlueprint })
+        });
+
+        const validateResult = await validateResponse.json();
+
+        if (!validateResponse.ok) {
+          throw new Error(validateResult.error || 'Validation failed');
+        }
+
+        // Display validation results
+        displayMergedValidationResults(validateResult, mergeResult.metadata);
+        validationPassed = validateResult.valid;
+
+        if (validateResult.valid) {
+          document.getElementById('simulate-btn').style.display = 'inline-block';
+          document.getElementById('deploy-btn').style.display = 'inline-block';
+          document.getElementById('export-btn').style.display = 'inline-block';
+        }
+      } catch (error) {
+        resultsDiv.innerHTML = `<div class="validation-item error">
+          <strong>Error:</strong> ${escapeHtml(error.message)}
+        </div>`;
+      }
+    }
+
+    function displayMergedValidationResults(result, mergeMetadata) {
+      const resultsDiv = document.getElementById('validation-results');
+      
+      let html = '<h3>Merge & Validation Results:</h3>';
+      
+      // Show merge metadata
+      html += '<div class="validation-item info">';
+      html += '<strong>Merged Configurations:</strong><br>';
+      if (mergeMetadata.includedConfigs.worldModel) {
+        html += '✓ World Model Config included<br>';
+      }
+      if (mergeMetadata.includedConfigs.memoryEngine) {
+        html += '✓ Memory Engine Config included<br>';
+      }
+      if (mergeMetadata.includedConfigs.mcpServer) {
+        html += '✓ MCP Server Config included<br>';
+      }
+      html += '</div>';
+      
+      // Overall validation status
+      if (result.valid) {
+        html += '<div class="validation-item success"><strong>✓ Overall Validation: Passed</strong></div>';
+      } else {
+        html += '<div class="validation-item error"><strong>✗ Overall Validation: Failed</strong></div>';
+      }
+
+      // Component-based validation display
+      html += '<div style="margin-top: 20px;">';
+
+      // World Model Component
+      html += '<div style="border-left: 4px solid #3b82f6; padding-left: 15px; margin-bottom: 20px;">';
+      html += '<h4 style="color: #3b82f6; margin-bottom: 10px;">🌍 World Model Component</h4>';
+      
+      if (result.worldModelValidation) {
+        if (result.worldModelValidation.valid) {
+          html += '<div class="validation-item success" style="margin-left: 0;">✓ World model validation passed</div>';
+        } else {
+          html += '<div class="validation-item error" style="margin-left: 0;">✗ World model validation failed</div>';
+          if (result.worldModelValidation.errors) {
+            result.worldModelValidation.errors.forEach(error => {
+              html += `<div class="validation-item error" style="margin-left: 0;">${escapeHtml(error)}</div>`;
+            });
+          }
+        }
+        if (result.worldModelValidation.warnings) {
+          result.worldModelValidation.warnings.forEach(warning => {
+            html += `<div class="validation-item warning" style="margin-left: 0;">${escapeHtml(warning)}</div>`;
+          });
+        }
+      }
+      
+      // Also include world model CRV validations
+      if (result.crvResult) {
+        result.crvResult.validationResults.forEach(vr => {
+          if (vr.reason?.toLowerCase().includes('world model') || 
+              vr.reason?.toLowerCase().includes('causal') ||
+              vr.reason?.toLowerCase().includes('constraint') ||
+              vr.metadata?.component === 'world-model') {
+            const severity = vr.valid ? 'success' : 'error';
+            html += `<div class="validation-item ${severity}" style="margin-left: 0;">
+              ${vr.valid ? '✓' : '✗'} ${escapeHtml(vr.reason || 'Validation check')}
+              ${vr.confidence ? ` (Confidence: ${(safeParseFloat(vr.confidence) * 100).toFixed(1)}%)` : ''}
+              ${vr.failure_code ? `<br><small>Code: ${escapeHtml(vr.failure_code)}</small>` : ''}
+            </div>`;
+          }
+        });
+      }
+      
+      if (!result.worldModelValidation && (!result.crvResult || !result.crvResult.validationResults.some(vr => 
+        vr.reason?.toLowerCase().includes('world model')))) {
+        html += '<div class="validation-item success" style="margin-left: 0;">✓ No world model violations</div>';
+      }
+      html += '</div>';
+
+      // Memory Component
+      html += '<div style="border-left: 4px solid #8b5cf6; padding-left: 15px; margin-bottom: 20px;">';
+      html += '<h4 style="color: #8b5cf6; margin-bottom: 10px;">🧠 Memory Component</h4>';
+      
+      if (result.memoryEngineValidation) {
+        if (result.memoryEngineValidation.valid) {
+          html += '<div class="validation-item success" style="margin-left: 0;">✓ Memory engine validation passed</div>';
+        } else {
+          html += '<div class="validation-item error" style="margin-left: 0;">✗ Memory engine validation failed</div>';
+          result.memoryEngineValidation.errors.forEach(error => {
+            html += `<div class="validation-item error" style="margin-left: 0;">${escapeHtml(error)}</div>`;
+          });
+        }
+        result.memoryEngineValidation.warnings.forEach(warning => {
+          html += `<div class="validation-item warning" style="margin-left: 0;">${escapeHtml(warning)}</div>`;
+        });
+      }
+      
+      // Also include memory CRV validations
+      if (result.crvResult) {
+        result.crvResult.validationResults.forEach(vr => {
+          if (vr.reason?.toLowerCase().includes('memory') || 
+              vr.reason?.toLowerCase().includes('retention') ||
+              vr.reason?.toLowerCase().includes('compression') ||
+              vr.reason?.toLowerCase().includes('encryption') ||
+              vr.metadata?.component === 'memory') {
+            const severity = vr.valid ? 'success' : 'error';
+            html += `<div class="validation-item ${severity}" style="margin-left: 0;">
+              ${vr.valid ? '✓' : '✗'} ${escapeHtml(vr.reason || 'Validation check')}
+              ${vr.confidence ? ` (Confidence: ${(safeParseFloat(vr.confidence) * 100).toFixed(1)}%)` : ''}
+              ${vr.failure_code ? `<br><small>Code: ${escapeHtml(vr.failure_code)}</small>` : ''}
+            </div>`;
+          }
+        });
+      }
+      
+      if (!result.memoryEngineValidation && (!result.crvResult || !result.crvResult.validationResults.some(vr => 
+        vr.reason?.toLowerCase().includes('memory')))) {
+        html += '<div class="validation-item success" style="margin-left: 0;">✓ No memory violations</div>';
+      }
+      html += '</div>';
+
+      // MCP Component
+      html += '<div style="border-left: 4px solid #f59e0b; padding-left: 15px; margin-bottom: 20px;">';
+      html += '<h4 style="color: #f59e0b; margin-bottom: 10px;">🔧 MCP Component</h4>';
+      
+      let hasMCPViolations = false;
+      
+      // Check policy results for MCP actions
+      if (result.policyResult && result.policyResult.metadata?.mcpAction) {
+        hasMCPViolations = true;
+        const severity = result.policyResult.approved ? 'success' : 'error';
+        html += `<div class="validation-item ${severity}" style="margin-left: 0;">
+          ${result.policyResult.approved ? '✓' : '✗'} ${escapeHtml(result.policyResult.reason || 'MCP policy check')}
+          ${result.policyResult.metadata?.mcpServerName ? `<br><small>Server: ${escapeHtml(result.policyResult.metadata.mcpServerName)}</small>` : ''}
+          ${result.policyResult.metadata?.mcpActionName ? `<br><small>Action: ${escapeHtml(result.policyResult.metadata.mcpActionName)}</small>` : ''}
+          ${result.policyResult.metadata?.requiresCRV ? '<br><small>Requires CRV validation</small>' : ''}
+        </div>`;
+      }
+      
+      // Also include MCP CRV validations
+      if (result.crvResult) {
+        result.crvResult.validationResults.forEach(vr => {
+          if (vr.reason?.toLowerCase().includes('mcp') ||
+              vr.metadata?.component === 'mcp') {
+            hasMCPViolations = true;
+            const severity = vr.valid ? 'success' : 'error';
+            html += `<div class="validation-item ${severity}" style="margin-left: 0;">
+              ${vr.valid ? '✓' : '✗'} ${escapeHtml(vr.reason || 'Validation check')}
+              ${vr.confidence ? ` (Confidence: ${(safeParseFloat(vr.confidence) * 100).toFixed(1)}%)` : ''}
+            </div>`;
+          }
+        });
+      }
+      
+      if (!hasMCPViolations) {
+        html += '<div class="validation-item success" style="margin-left: 0;">✓ No MCP violations</div>';
+      }
+      html += '</div>';
+
+      // General Policy Component (non-MCP)
+      if (result.policyResult && !result.policyResult.metadata?.mcpAction) {
+        html += '<div style="border-left: 4px solid #10b981; padding-left: 15px; margin-bottom: 20px;">';
+        html += '<h4 style="color: #10b981; margin-bottom: 10px;">🛡️ General Policy</h4>';
+        
+        const severity = result.policyResult.approved ? 'success' : 'error';
+        html += `<div class="validation-item ${severity}" style="margin-left: 0;">
+          ${result.policyResult.approved ? '✓' : '✗'} ${escapeHtml(result.policyResult.decision || 'Policy check')}
+          ${result.policyResult.reason ? `<br><small>${escapeHtml(result.policyResult.reason)}</small>` : ''}
+        </div>`;
+        html += '</div>';
+      }
+
+      // Schema Validation
+      if (result.schemaValidation) {
+        html += '<div style="border-left: 4px solid #6366f1; padding-left: 15px; margin-bottom: 20px;">';
+        html += '<h4 style="color: #6366f1; margin-bottom: 10px;">📐 Schema Validation</h4>';
+        if (result.schemaValidation.valid) {
+          html += '<div class="validation-item success" style="margin-left: 0;">✓ Schema validation passed</div>';
+        } else {
+          html += '<div class="validation-item error" style="margin-left: 0;">✗ Schema validation failed</div>';
+          if (result.schemaValidation.errors) {
+            result.schemaValidation.errors.forEach(error => {
+              html += `<div class="validation-item error" style="margin-left: 0;">${escapeHtml(error)}</div>`;
+            });
+          }
+        }
+        html += '</div>';
+      }
+
+      html += '</div>'; // Close component sections
+
+      // Display additional issues
+      if (result.issues && result.issues.length > 0) {
+        html += '<h4 style="margin-top: 15px;">⚠️ Additional Issues:</h4>';
+        result.issues.forEach(issue => {
+          html += `<div class="validation-item ${issue.severity}">
+            <strong>${issue.severity.toUpperCase()}:</strong> ${escapeHtml(issue.message)}
+            ${issue.field ? ` (Field: ${escapeHtml(issue.field)})` : ''}
+          </div>`;
+        });
+      }
+
+      resultsDiv.innerHTML = html;
+    }
+
+    async function exportBlueprint() {
+      if (!generatedBlueprint) {
+        alert('No agent blueprint to export');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/agents/blueprint/export', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({ blueprint: generatedBlueprint })
+        });
+
+        if (!response.ok) {
+          const result = await response.json();
+          throw new Error(result.error || 'Failed to export blueprint');
+        }
+
+        // Get the filename from the Content-Disposition header
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `agent-blueprint-${generatedBlueprint.id || 'export'}.json`;
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+          if (filenameMatch) {
+            filename = filenameMatch[1];
+          }
+        }
+
+        // Get the blob and create a download link
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        alert('Blueprint exported successfully!');
+      } catch (error) {
+        alert(`Error exporting blueprint: ${error.message}`);
+      }
+    }
+  </script>
+  
+  <!-- Version History Modal -->
+  <div id="version-history-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; padding: 30px; max-width: 900px; width: 90%; max-height: 80vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Agent Version History</h2>
+        <button class="btn-secondary" onclick="closeVersionHistory()">Close</button>
+      </div>
+      <div id="version-history-content">
+        <p>Loading...</p>
+      </div>
+    </div>
+  </div>
+  
+  <style>
+    .agent-card {
+      padding: 15px;
+      margin-bottom: 10px;
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .agent-card:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+    
+    .version-card {
+      padding: 15px;
+      margin-bottom: 10px;
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+    }
+    
+    .version-card.latest {
+      border-color: #10b981;
+      background: #f0fdf4;
+    }
+
+    /* MCP Modal Styles */
+    .mcp-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mcp-modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 1000px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .mcp-action-card {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .mcp-action-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .mcp-risk-selector {
+      padding: 6px 12px;
+      border: 2px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .mcp-validation-result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .mcp-validation-result.valid {
+      background: #f0fdf4;
+      border: 2px solid #10b981;
+    }
+
+    .mcp-validation-result.invalid {
+      background: #fef2f2;
+      border: 2px solid #ef4444;
+    }
+  </style>
+
+  <!-- MCP Builder Modal -->
+  <div id="mcp-modal" class="mcp-modal">
+    <div class="mcp-modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>🔧 MCP Server Builder</h2>
+        <button class="btn-secondary" onclick="closeMCPBuilder()">Close</button>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <p style="color: #64748b; margin-bottom: 15px;">
+          Generate a Model Context Protocol (MCP) server definition from your selected tools. 
+          Risk tiers are automatically inferred but can be manually adjusted.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label for="mcp-server-name">Server Name *</label>
+        <input type="text" id="mcp-server-name" placeholder="e.g., agent-tools-server">
+        <div class="help-text">Unique name for your MCP server</div>
+      </div>
+
+      <div class="form-group">
+        <label for="mcp-server-description">Server Description</label>
+        <textarea id="mcp-server-description" placeholder="Describe what this MCP server does"></textarea>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="mcp-enable-crv" checked>
+          <span>Enable CRV validation for HIGH/CRITICAL actions</span>
+        </label>
+      </div>
+
+      <div id="mcp-actions-container">
+        <h3 style="margin-bottom: 15px;">Actions (from selected tools)</h3>
+        <div id="mcp-actions-list">
+          <!-- Actions will be populated here -->
+        </div>
+      </div>
+
+      <div id="mcp-validation-result" style="display: none;">
+        <!-- Validation results will appear here -->
+      </div>
+
+      <div class="button-group" style="margin-top: 20px;">
+        <button class="btn-secondary" onclick="validateMCPServer()">Validate</button>
+        <button class="btn-primary" onclick="generateMCPServer()">Generate MCP Server</button>
+      </div>
+
+      <div id="mcp-output" style="display: none; margin-top: 20px;">
+        <h3>Generated MCP Server Definition</h3>
+        <pre id="mcp-output-json" style="background: #1e293b; color: #e2e8f0; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 12px;"></pre>
+        <button class="btn-secondary" onclick="copyMCPOutput()" style="margin-top: 10px;">Copy to Clipboard</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // MCP Builder Functions
+    let mcpActions = [];
+
+    function openMCPBuilder() {
+      // Get selected tools
+      const selectedTools = [];
+      document.querySelectorAll('.tool-item input:checked').forEach(input => {
+        const label = input.nextElementSibling.textContent;
+        const toolName = input.value;
+        const riskBadge = input.nextElementSibling.querySelector('.badge');
+        const inferredRisk = riskBadge ? riskBadge.className.split(' ')[1].toUpperCase() : 'MEDIUM';
+
+        selectedTools.push({
+          name: toolName,
+          label: label.replace(/\s+(low|medium|high|critical)\s*$/, '').trim(),
+          inferredRisk: inferredRisk
+        });
+      });
+
+      if (selectedTools.length === 0) {
+        alert('Please select at least one tool first');
+        return;
+      }
+
+      // Create action cards
+      mcpActions = selectedTools.map(tool => ({
+        name: tool.name,
+        description: `${tool.label} - Automated tool action`,
+        parameters: [],
+        riskTier: tool.inferredRisk,
+        requiredPermissions: inferPermissions(tool.inferredRisk),
+        requiresApproval: tool.inferredRisk === 'HIGH' || tool.inferredRisk === 'CRITICAL'
+      }));
+
+      renderMCPActions();
+      document.getElementById('mcp-modal').style.display = 'flex';
+    }
+
+    function inferPermissions(riskTier) {
+      switch(riskTier) {
+        case 'CRITICAL':
+          return ['admin', 'critical_operations'];
+        case 'HIGH':
+          return ['elevated_operations'];
+        case 'MEDIUM':
+          return ['standard_operations'];
+        default:
+          return [];
+      }
+    }
+
+    function renderMCPActions() {
+      const container = document.getElementById('mcp-actions-list');
+      container.innerHTML = '';
+
+      mcpActions.forEach((action, index) => {
+        const card = document.createElement('div');
+        card.className = 'mcp-action-card';
+        card.innerHTML = `
+          <div class="mcp-action-header">
+            <strong>${action.name}</strong>
+            <select class="mcp-risk-selector" onchange="updateActionRisk(${index}, this.value)">
+              <option value="LOW" ${action.riskTier === 'LOW' ? 'selected' : ''}>LOW</option>
+              <option value="MEDIUM" ${action.riskTier === 'MEDIUM' ? 'selected' : ''}>MEDIUM</option>
+              <option value="HIGH" ${action.riskTier === 'HIGH' ? 'selected' : ''}>HIGH</option>
+              <option value="CRITICAL" ${action.riskTier === 'CRITICAL' ? 'selected' : ''}>CRITICAL</option>
+            </select>
+          </div>
+          <div style="font-size: 14px; color: #64748b;">${action.description}</div>
+          <div style="margin-top: 8px; font-size: 13px;">
+            <strong>Permissions:</strong> ${action.requiredPermissions.join(', ') || 'None'}
+          </div>
+          <div style="margin-top: 4px; font-size: 13px;">
+            <strong>Requires Approval:</strong> ${action.requiresApproval ? 'Yes' : 'No'}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateActionRisk(index, newRisk) {
+      mcpActions[index].riskTier = newRisk;
+      mcpActions[index].requiredPermissions = inferPermissions(newRisk);
+      mcpActions[index].requiresApproval = newRisk === 'HIGH' || newRisk === 'CRITICAL';
+      renderMCPActions();
+    }
+
+    async function validateMCPServer() {
+      const serverName = document.getElementById('mcp-server-name').value.trim();
+      
+      if (!serverName) {
+        alert('Please enter a server name');
+        return;
+      }
+
+      const server = {
+        name: serverName,
+        version: '1.0.0',
+        description: document.getElementById('mcp-server-description').value || 'MCP server for agent tools',
+        actions: mcpActions.map(action => ({
+          name: action.name,
+          description: action.description,
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+          riskTier: action.riskTier,
+          requiredPermissions: action.requiredPermissions.length > 0 ? action.requiredPermissions : undefined,
+          requiresApproval: action.requiresApproval,
+          crvValidation: document.getElementById('mcp-enable-crv').checked && (action.riskTier === 'HIGH' || action.riskTier === 'CRITICAL'),
+        })),
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          totalActions: mcpActions.length,
+          riskDistribution: calculateRiskDistribution(),
+        },
+      };
+
+      try {
+        const response = await fetch('/api/mcp/validate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({ server })
+        });
+
+        const result = await response.json();
+        displayValidationResult(result);
+      } catch (error) {
+        alert(`Validation error: ${error.message}`);
+      }
+    }
+
+    function calculateRiskDistribution() {
+      const distribution = { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 };
+      mcpActions.forEach(action => {
+        distribution[action.riskTier]++;
+      });
+      return distribution;
+    }
+
+    function displayValidationResult(result) {
+      const container = document.getElementById('mcp-validation-result');
+      const isValid = result.governance?.valid !== false && result.schema?.success !== false;
+
+      container.className = `mcp-validation-result ${isValid ? 'valid' : 'invalid'}`;
+      container.innerHTML = `
+        <h4>${isValid ? '✅ Validation Passed' : '❌ Validation Failed'}</h4>
+        ${result.governance?.errors?.length > 0 ? `
+          <div style="margin-top: 10px;">
+            <strong>Errors:</strong>
+            <ul style="margin-top: 5px; margin-left: 20px;">
+              ${result.governance.errors.map(err => `<li>${err}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+        ${result.governance?.warnings?.length > 0 ? `
+          <div style="margin-top: 10px;">
+            <strong>Warnings:</strong>
+            <ul style="margin-top: 5px; margin-left: 20px;">
+              ${result.governance.warnings.map(warn => `<li>${warn}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+        ${result.governance?.governance ? `
+          <div style="margin-top: 10px;">
+            <strong>Governance Issues:</strong>
+            ${result.governance.governance.highRiskActionsWithoutPermissions?.length > 0 ? `
+              <div style="margin-top: 5px;">High risk actions without permissions: ${result.governance.governance.highRiskActionsWithoutPermissions.join(', ')}</div>
+            ` : ''}
+            ${result.governance.governance.criticalActionsWithoutApproval?.length > 0 ? `
+              <div style="margin-top: 5px;">Critical actions without approval: ${result.governance.governance.criticalActionsWithoutApproval.join(', ')}</div>
+            ` : ''}
+            ${result.governance.governance.blockedActions?.length > 0 ? `
+              <div style="margin-top: 5px; color: #dc2626;">Blocked actions: ${result.governance.governance.blockedActions.join(', ')}</div>
+            ` : ''}
+          </div>
+        ` : ''}
+      `;
+      container.style.display = 'block';
+    }
+
+    async function generateMCPServer() {
+      const serverName = document.getElementById('mcp-server-name').value.trim();
+      
+      if (!serverName) {
+        alert('Please enter a server name');
+        return;
+      }
+
+      const tools = mcpActions.map(action => ({
+        name: action.name,
+        description: action.description,
+        parameters: [],
+        capabilities: [],
+      }));
+
+      const request = {
+        serverName: serverName,
+        serverVersion: '1.0.0',
+        serverDescription: document.getElementById('mcp-server-description').value || 'MCP server for agent tools',
+        tools: tools,
+        defaultRiskTier: 'MEDIUM',
+        enableCRVValidation: document.getElementById('mcp-enable-crv').checked,
+        inferRiskFromCapabilities: false, // We're using manually set risk tiers
+      };
+
+      // Override with manually set risk tiers
+      mcpActions.forEach((action, index) => {
+        tools[index].metadata = {
+          overrideRiskTier: action.riskTier,
+        };
+      });
+
+      try {
+        const response = await fetch('/api/mcp/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify(request)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Generation failed');
+        }
+
+        // Display the generated server
+        document.getElementById('mcp-output-json').textContent = JSON.stringify(result.server, null, 2);
+        document.getElementById('mcp-output').style.display = 'block';
+
+        // Also display validation
+        if (result.validation) {
+          displayValidationResult({ governance: result.validation });
+        }
+
+        alert('MCP server generated successfully!');
+      } catch (error) {
+        alert(`Generation error: ${error.message}`);
+      }
+    }
+
+    function copyMCPOutput() {
+      const output = document.getElementById('mcp-output-json').textContent;
+      navigator.clipboard.writeText(output).then(() => {
+        alert('MCP server definition copied to clipboard!');
+      }).catch(err => {
+        alert('Failed to copy: ' + err.message);
+      });
+    }
+
+    function closeMCPBuilder() {
+      document.getElementById('mcp-modal').style.display = 'none';
+      document.getElementById('mcp-output').style.display = 'none';
+      document.getElementById('mcp-validation-result').style.display = 'none';
+    }
+
+    // Initialize persona features
+    window.addEventListener('DOMContentLoaded', function() {
+      if (typeof personaManager !== 'undefined') {
+        addPersonaBadge();
+        
+        // Personal users can create agents but developers get more features
+        if (!personaManager.hasPermission('editTools')) {
+          hideElementIfNoPermission('.tool-config-section', 'editTools');
+        }
+      }
+    });
+  </script>
+</body>
+</html>

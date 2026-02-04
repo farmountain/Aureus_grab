@@ -1,0 +1,163 @@
+{
+  "id": "agent-api-monitor-001",
+  "name": "API Health Monitor Agent",
+  "version": "1.0.0",
+  "description": "Monitors API endpoints for health status and sends alerts on failures",
+  "goal": "Monitor API endpoints every 5 minutes and alert via email when failures are detected",
+  "riskProfile": "MEDIUM",
+  "config": {
+    "prompt": "You are an API health monitoring agent. Your primary responsibility is to check the health of designated API endpoints and alert when issues are detected.\n\nYour workflow:\n1. Check each endpoint in the monitoring list\n2. Record response time and status code\n3. If any endpoint returns an error or takes >5 seconds, send an alert email\n4. Log all checks for audit purposes\n\nAlways:\n- Validate response formats\n- Handle timeouts gracefully\n- Respect rate limits (max 10 checks/minute)\n- Include diagnostic information in alerts",
+    "systemPrompt": "You are a safety-conscious AI agent operating in a controlled environment. This is a MEDIUM risk operation. Exercise normal caution. Follow established procedures and validate critical actions.",
+    "temperature": 0.7,
+    "maxTokens": 2048,
+    "model": "gpt-4"
+  },
+  "tools": [
+    {
+      "toolId": "tool-http-client",
+      "name": "http-client",
+      "enabled": true,
+      "permissions": ["read"],
+      "parameters": {
+        "timeout": 30000,
+        "maxRetries": 3,
+        "followRedirects": true
+      },
+      "riskTier": "LOW"
+    },
+    {
+      "toolId": "tool-email-sender",
+      "name": "email-sender",
+      "enabled": true,
+      "permissions": ["write"],
+      "parameters": {
+        "fromAddress": "monitor@example.com",
+        "smtpServer": "smtp.example.com"
+      },
+      "riskTier": "MEDIUM"
+    },
+    {
+      "toolId": "tool-logger",
+      "name": "structured-logger",
+      "enabled": true,
+      "permissions": ["write"],
+      "parameters": {
+        "logLevel": "info",
+        "destination": "logs/api-monitor.log"
+      },
+      "riskTier": "LOW"
+    }
+  ],
+  "policies": [
+    {
+      "policyId": "policy-rate-limit",
+      "name": "Rate Limiting Policy",
+      "enabled": true,
+      "rules": [
+        {
+          "type": "rate_limit",
+          "description": "Limit API checks to prevent resource exhaustion",
+          "parameters": {
+            "maxActionsPerMinute": 10,
+            "burstAllowance": 3
+          }
+        }
+      ],
+      "failFast": false
+    },
+    {
+      "policyId": "policy-timeout",
+      "name": "Timeout Enforcement Policy",
+      "enabled": true,
+      "rules": [
+        {
+          "type": "timeout_enforcement",
+          "description": "Enforce timeouts on all HTTP requests",
+          "parameters": {
+            "defaultTimeout": 30000,
+            "maxTimeout": 60000
+          }
+        }
+      ],
+      "failFast": false
+    },
+    {
+      "policyId": "policy-validation",
+      "name": "Output Validation Policy",
+      "enabled": true,
+      "rules": [
+        {
+          "type": "validation_gate",
+          "description": "Validate all outputs before sending alerts",
+          "parameters": {
+            "requireValidJSON": true,
+            "sanitizeHTML": true
+          }
+        }
+      ],
+      "failFast": true
+    },
+    {
+      "policyId": "policy-audit",
+      "name": "Audit Logging Policy",
+      "enabled": true,
+      "rules": [
+        {
+          "type": "audit_logging",
+          "description": "Log all actions for compliance and debugging",
+          "parameters": {
+            "logLevel": "detailed",
+            "includeTimestamps": true,
+            "includePII": false
+          }
+        }
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "workflowId": "workflow-health-check",
+      "name": "API Health Check Workflow",
+      "description": "Primary workflow that checks API endpoints and sends alerts",
+      "triggerConditions": ["scheduled_5min", "manual_trigger"],
+      "priority": 1
+    },
+    {
+      "workflowId": "workflow-error-handler",
+      "name": "Error Handling Workflow",
+      "description": "Handles errors and implements retry logic",
+      "triggerConditions": ["check_failed", "timeout_exceeded"],
+      "priority": 2
+    }
+  ],
+  "constraints": [
+    "Must only perform read operations on monitored APIs",
+    "Must not exceed 10 API checks per minute",
+    "Must respect all policy constraints",
+    "Email alerts limited to critical failures only",
+    "Must complete all checks within 5 minutes"
+  ],
+  "maxExecutionTime": 300000,
+  "maxRetries": 3,
+  "successCriteria": [
+    "All configured endpoints successfully checked",
+    "Alerts sent for any detected failures",
+    "No policy violations during execution",
+    "Execution completed within time limit",
+    "All checks logged to audit trail",
+    "No false positive alerts"
+  ],
+  "tags": [
+    "monitoring",
+    "api-health",
+    "alerting",
+    "risk:medium",
+    "tool:http-client",
+    "tool:email-sender",
+    "ai-generated",
+    "blueprint"
+  ],
+  "owner": "devops-team",
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-15T10:30:00Z"
+}

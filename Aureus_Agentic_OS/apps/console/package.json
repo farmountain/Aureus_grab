@@ -1,0 +1,48 @@
+{
+  "name": "@aureus/console",
+  "version": "0.1.0",
+  "description": "Operator console for Aureus Agentic OS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "aureus-console": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "node dist/server.js",
+    "dev": "tsc && node dist/server.js",
+    "deploy:staging": "npm run build && node -e \"console.log('Deploy to staging: rsync -avz dist/ user@staging-server:/opt/aureus/console/')\"",
+    "deploy:production": "npm run build && node -e \"console.log('Deploy to production: rsync -avz dist/ user@prod-server:/opt/aureus/console/')\"",
+    "backup": "node -e \"console.log('Backup: tar -czf console-backup-$(date +%Y%m%d-%H%M%S).tar.gz dist/ src/')\"",
+    "health-check": "curl -f http://localhost:3000/health || exit 1"
+  },
+  "dependencies": {
+    "@aureus/benchright": "file:../../packages/benchright",
+    "@aureus/crv": "file:../../packages/crv",
+    "@aureus/kernel": "file:../../packages/kernel",
+    "@aureus/memory-hipcortex": "file:../../packages/memory-hipcortex",
+    "@aureus/observability": "file:../../packages/observability",
+    "@aureus/perception": "file:../../packages/perception",
+    "@aureus/policy": "file:../../packages/policy",
+    "@aureus/reflexion": "file:../../packages/reflexion",
+    "@aureus/sdk": "file:../../packages/sdk",
+    "@aureus/tools": "file:../../packages/tools",
+    "@aureus/world-model": "file:../../packages/world-model",
+    "@types/node": "^20.10.0",
+    "bcrypt": "^5.1.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "openai": "^4.104.0"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^6.3.4",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}

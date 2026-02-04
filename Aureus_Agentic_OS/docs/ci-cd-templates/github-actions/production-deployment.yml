@@ -1,0 +1,379 @@
+name: Production Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - production
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+      skip_tests:
+        description: 'Skip tests (not recommended)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+  deployments: write
+
+jobs:
+  # Pre-deployment verification
+  pre-deployment:
+    name: Pre-Deployment Verification
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages
+        run: npm run build:ordered
+
+      - name: Run pre-deployment verification
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+          VERSION: ${{ github.event.inputs.version || github.ref_name }}
+          VERIFY_TESTS: ${{ !github.event.inputs.skip_tests }}
+        run: |
+          chmod +x ops/verification/pre-deployment.sh
+          ./ops/verification/pre-deployment.sh
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ github.sha }}
+          path: |
+            apps/console/dist/
+            apps/console/src/ui/
+            packages/*/dist/
+          retention-days: 30
+
+  # Build and package
+  build:
+    name: Build and Package
+    runs-on: ubuntu-latest
+    needs: pre-deployment
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages
+        run: npm run build:ordered
+
+      - name: Build console
+        run: npm run build --workspace=@aureus/console
+
+      - name: Create deployment package
+        run: |
+          VERSION=${{ github.event.inputs.version || github.ref_name }}
+          mkdir -p deploy-package
+          cp -r apps/console/dist deploy-package/
+          cp -r apps/console/src/ui deploy-package/ui
+          cp apps/console/package.json deploy-package/
+          echo "$VERSION" > deploy-package/VERSION
+          tar -czf console-app-${VERSION}.tar.gz -C deploy-package .
+
+      - name: Upload deployment package
+        uses: actions/upload-artifact@v4
+        with:
+          name: console-app-${{ github.event.inputs.version || github.ref_name }}
+          path: console-app-*.tar.gz
+          retention-days: 90
+
+      - name: Upload to release (if tagged)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: console-app-*.tar.gz
+
+  # Deploy to staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.environment == 'staging' || github.ref == 'refs/heads/production'
+    environment:
+      name: staging
+      url: https://staging.aureus.example.com
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download deployment package
+        uses: actions/download-artifact@v4
+        with:
+          name: console-app-${{ github.event.inputs.version || github.ref_name }}
+
+      - name: Deploy to staging server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+        run: |
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          # Copy package to server
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            console-app-*.tar.gz ${STAGING_USER}@${STAGING_HOST}:/tmp/
+          
+          # Deploy on server
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${STAGING_USER}@${STAGING_HOST} << 'ENDSSH'
+            # Stop service
+            sudo systemctl stop aureus-console || true
+            
+            # Backup current version
+            sudo cp -r /opt/aureus/apps/console /opt/aureus/apps/console.backup || true
+            
+            # Extract new version
+            sudo tar -xzf /tmp/console-app-*.tar.gz -C /opt/aureus/apps/console/
+            
+            # Start service
+            sudo systemctl start aureus-console
+            
+            # Cleanup
+            rm /tmp/console-app-*.tar.gz
+          ENDSSH
+
+      - name: Wait for service to be ready
+        run: sleep 30
+
+      - name: Run post-deployment verification
+        env:
+          CONSOLE_URL: https://staging.aureus.example.com
+          ENVIRONMENT: staging
+          VERSION: ${{ github.event.inputs.version || github.ref_name }}
+        run: |
+          chmod +x ops/verification/post-deployment.sh
+          ./ops/verification/post-deployment.sh
+
+      - name: Run health checks
+        env:
+          CONSOLE_URL: https://staging.aureus.example.com
+        run: |
+          chmod +x ops/health-checks/console-health.sh
+          ./ops/health-checks/console-health.sh
+
+  # Deploy to production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, deploy-staging]
+    if: github.event.inputs.environment == 'production' || startsWith(github.ref, 'refs/tags/')
+    environment:
+      name: production
+      url: https://aureus.example.com
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download deployment package
+        uses: actions/download-artifact@v4
+        with:
+          name: console-app-${{ github.event.inputs.version || github.ref_name }}
+
+      - name: Create deployment record
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/deployments \
+            -f ref='${{ github.ref }}' \
+            -f environment='production' \
+            -f auto_merge=false
+
+      - name: Deploy to production servers
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+          PRODUCTION_HOSTS: ${{ secrets.PRODUCTION_HOSTS }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+        run: |
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          # Deploy to each production host
+          for host in ${PRODUCTION_HOSTS//,/ }; do
+            echo "Deploying to $host..."
+            
+            # Copy package
+            scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+              console-app-*.tar.gz ${PRODUCTION_USER}@${host}:/tmp/
+            
+            # Deploy
+            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+              ${PRODUCTION_USER}@${host} << 'ENDSSH'
+              # Backup current version
+              sudo cp -r /opt/aureus/apps/console /opt/aureus/apps/console.backup.$(date +%Y%m%d-%H%M%S)
+              
+              # Stop service
+              sudo systemctl stop aureus-console
+              
+              # Extract new version
+              sudo tar -xzf /tmp/console-app-*.tar.gz -C /opt/aureus/apps/console/
+              
+              # Start service
+              sudo systemctl start aureus-console
+              
+              # Wait for startup
+              sleep 10
+              
+              # Cleanup
+              rm /tmp/console-app-*.tar.gz
+          ENDSSH
+            
+            echo "Deployed to $host"
+          done
+
+      - name: Wait for all services to be ready
+        run: sleep 60
+
+      - name: Run post-deployment verification
+        env:
+          CONSOLE_URL: https://aureus.example.com
+          ENVIRONMENT: production
+          VERSION: ${{ github.event.inputs.version || github.ref_name }}
+        run: |
+          chmod +x ops/verification/post-deployment.sh
+          ./ops/verification/post-deployment.sh
+
+      - name: Run health checks on all nodes
+        env:
+          PRODUCTION_HOSTS: ${{ secrets.PRODUCTION_HOSTS }}
+        run: |
+          for host in ${PRODUCTION_HOSTS//,/ }; do
+            echo "Health check for $host..."
+            CONSOLE_URL=https://${host} ./ops/health-checks/console-health.sh
+          done
+
+      - name: Update deployment status
+        if: success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/deployments/${{ steps.deployment.outputs.deployment_id }}/statuses \
+            -f state='success' \
+            -f environment='production'
+
+  # Rollback on failure
+  rollback:
+    name: Automated Rollback
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: failure()
+    environment:
+      name: production
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get previous version
+        id: prev_version
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 ${{ github.ref }}^)
+          echo "version=$PREV_TAG" >> $GITHUB_OUTPUT
+
+      - name: Download previous version artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: console-app-${{ steps.prev_version.outputs.version }}
+        continue-on-error: true
+
+      - name: Execute rollback
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_KEY }}
+          PRODUCTION_HOSTS: ${{ secrets.PRODUCTION_HOSTS }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          ROLLBACK_VERSION: ${{ steps.prev_version.outputs.version }}
+        run: |
+          chmod +x ops/rollback/automated-rollback.sh
+          
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          # Rollback each host
+          for host in ${PRODUCTION_HOSTS//,/ }; do
+            echo "Rolling back $host..."
+            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+              ${PRODUCTION_USER}@${host} << 'ENDSSH'
+              # Stop service
+              sudo systemctl stop aureus-console
+              
+              # Restore backup
+              BACKUP=$(ls -t /opt/aureus/apps/console.backup.* | head -n1)
+              if [ -n "$BACKUP" ]; then
+                sudo rm -rf /opt/aureus/apps/console
+                sudo cp -r "$BACKUP" /opt/aureus/apps/console
+              fi
+              
+              # Start service
+              sudo systemctl start aureus-console
+          ENDSSH
+          done
+
+      - name: Verify rollback
+        env:
+          CONSOLE_URL: https://aureus.example.com
+        run: |
+          sleep 30
+          ./ops/verification/post-deployment.sh
+
+      - name: Notify team
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ Production deployment failed and was automatically rolled back to ${{ steps.prev_version.outputs.version }}'
+            })

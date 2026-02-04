@@ -1,0 +1,57 @@
+# Example: Workflow that FAILS Safety Validation
+# This workflow demonstrates what NOT to do
+# Running this will result in model-checking errors
+
+id: unsafe-workflow
+name: Unsafe Workflow (Will Fail Validation)
+
+tasks:
+  # CRITICAL risk: Delete database
+  - id: delete-database
+    name: Delete Production Database
+    type: action
+    riskTier: CRITICAL
+    # ❌ ERROR: Missing requiredPermissions for CRITICAL risk
+    # ⚠️  WARNING: Missing compensation for CRITICAL risk
+    compensation:
+      onFailure: notify-admin
+
+  # MEDIUM risk: Regular action
+  - id: process-data
+    name: Process Data
+    type: action
+    riskTier: MEDIUM
+    requiredPermissions:
+      - action: write
+        resource: data
+
+  # ❌ ERROR: This action follows a CRITICAL task without approval
+  # This violates the "no action after CRITICAL risk unless approved" invariant
+  - id: send-email
+    name: Send Notification Email
+    type: action
+    riskTier: LOW
+    requiredPermissions:
+      - action: write
+        resource: email
+
+  - id: notify-admin
+    name: Notify Administrator
+    type: action
+    riskTier: LOW
+    requiredPermissions:
+      - action: write
+        resource: notification
+
+dependencies:
+  send-email:
+    - delete-database  # ❌ This is the violation!
+  notify-admin:
+    - send-email
+
+# Expected validation errors:
+# 1. Task "delete-database" has CRITICAL risk tier but no required permissions defined
+# 2. Task "send-email" follows CRITICAL risk task "delete-database" without approval
+# 
+# Expected warnings:
+# 1. Task "delete-database" has CRITICAL risk tier but no compensation defined (only has a hook to notify-admin)

@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevOps Dashboard - Aureus Console</title>
+  <script src="/persona-utils.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 15px;
+    }
+
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      transition: background 0.2s;
+    }
+
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .controls {
+      padding: 20px 30px;
+      background: #f7f9fc;
+      border-bottom: 1px solid #e1e8ed;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .metric-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .metric-card.success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+
+    .metric-card.warning {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .metric-card.critical {
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+
+    .metric-label {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .metric-detail {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .section {
+      background: #f7f9fc;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #2d3748;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 8px;
+    }
+
+    .status-healthy {
+      background: #38ef7d;
+      box-shadow: 0 0 10px rgba(56, 239, 125, 0.5);
+    }
+
+    .status-degraded {
+      background: #f5576c;
+      box-shadow: 0 0 10px rgba(245, 87, 108, 0.5);
+    }
+
+    .status-critical {
+      background: #ff0000;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .pipeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .pipeline-item {
+      background: white;
+      border: 1px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 15px;
+      transition: box-shadow 0.2s;
+    }
+
+    .pipeline-item:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .pipeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .pipeline-name {
+      font-weight: 600;
+      font-size: 16px;
+      color: #2d3748;
+    }
+
+    .pipeline-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .pipeline-status.passed {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+
+    .pipeline-status.running {
+      background: #bee3f8;
+      color: #2c5282;
+    }
+
+    .pipeline-status.pending {
+      background: #feebc8;
+      color: #7c2d12;
+    }
+
+    .pipeline-status.failed {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+
+    .pipeline-status.blocked {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+
+    .pipeline-stages {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+    }
+
+    .stage {
+      flex: 1;
+      min-width: 150px;
+      background: #f7f9fc;
+      border-radius: 6px;
+      padding: 12px;
+      border: 2px solid #e1e8ed;
+      position: relative;
+    }
+
+    .stage.passed {
+      border-color: #38ef7d;
+      background: #f0fdf4;
+    }
+
+    .stage.running {
+      border-color: #667eea;
+      background: #eff6ff;
+      animation: pulse-border 2s infinite;
+    }
+
+    .stage.pending {
+      border-color: #fbbf24;
+      background: #fffbeb;
+    }
+
+    .stage.failed {
+      border-color: #f5576c;
+      background: #fef2f2;
+    }
+
+    .stage.blocked {
+      border-color: #94a3b8;
+      background: #f8fafc;
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { border-width: 2px; }
+      50% { border-width: 3px; }
+    }
+
+    .stage-name {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #2d3748;
+    }
+
+    .stage-time {
+      font-size: 11px;
+      color: #718096;
+    }
+
+    .approval-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #667eea;
+      color: white;
+      border-radius: 10px;
+      font-size: 10px;
+      margin-top: 5px;
+    }
+
+    .gate-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 15px;
+    }
+
+    .gate-card {
+      background: white;
+      border: 1px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 15px;
+    }
+
+    .gate-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .gate-name {
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    .gate-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .gate-status.passed {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+
+    .gate-status.failed {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+
+    .gate-status.pending {
+      background: #feebc8;
+      color: #7c2d12;
+    }
+
+    .gate-details {
+      font-size: 12px;
+      color: #718096;
+      margin-top: 8px;
+    }
+
+    .gate-detail-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+
+    .incident-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .incident-item {
+      background: white;
+      border-left: 4px solid #e1e8ed;
+      border-radius: 4px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .incident-item.critical {
+      border-left-color: #ff0000;
+    }
+
+    .incident-item.high {
+      border-left-color: #f5576c;
+    }
+
+    .incident-item.medium {
+      border-left-color: #fbbf24;
+    }
+
+    .incident-item.low {
+      border-left-color: #94a3b8;
+    }
+
+    .incident-info {
+      flex: 1;
+    }
+
+    .incident-title {
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 4px;
+    }
+
+    .incident-meta {
+      font-size: 12px;
+      color: #718096;
+    }
+
+    .incident-severity {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .incident-severity.critical {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+
+    .incident-severity.high {
+      background: #feebc8;
+      color: #7c2d12;
+    }
+
+    .incident-severity.medium {
+      background: #fefcbf;
+      color: #744210;
+    }
+
+    .incident-severity.low {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #718096;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #718096;
+    }
+
+    .spinner {
+      border: 3px solid #e1e8ed;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .date-input, .action-select {
+      padding: 8px 12px;
+      border: 1px solid #e1e8ed;
+      border-radius: 6px;
+      font-size: 14px;
+      background: white;
+    }
+
+    .btn-secondary {
+      background: #718096;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #4a5568;
+    }
+
+    .audit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .audit-item {
+      background: white;
+      border: 1px solid #e1e8ed;
+      border-radius: 8px;
+      padding: 15px;
+      transition: box-shadow 0.2s;
+    }
+
+    .audit-item:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .audit-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .audit-action {
+      font-weight: 600;
+      font-size: 16px;
+      color: #2d3748;
+    }
+
+    .audit-timestamp {
+      font-size: 12px;
+      color: #718096;
+    }
+
+    .audit-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .audit-detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .audit-detail-label {
+      font-size: 11px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .audit-detail-value {
+      font-size: 14px;
+      color: #2d3748;
+      font-weight: 500;
+    }
+
+    .audit-action-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .audit-action-badge.approved {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+
+    .audit-action-badge.rejected {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+
+    .audit-action-badge.promoted {
+      background: #bee3f8;
+      color: #2c5282;
+    }
+
+    .audit-action-badge.rollback {
+      background: #feebc8;
+      color: #7c2d12;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>DevOps Dashboard</h1>
+        <p>Deployment pipelines, release gates, and incident monitoring</p>
+      </div>
+      <div class="nav-links">
+        <a href="/deployment" class="nav-link">Deployments</a>
+        <a href="/monitoring" class="nav-link">Monitoring</a>
+        <a href="/agent-studio" class="nav-link">Agent Studio</a>
+        <a href="/studio" class="nav-link">DAG Studio</a>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <button class="btn btn-primary" onclick="refreshDashboard()">🔄 Refresh</button>
+      </div>
+      <div class="control-group">
+        <span style="font-size: 12px; color: #718096;">Last updated: <span id="lastUpdate">Never</span></span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Release Health Overview -->
+      <div id="healthOverview" class="dashboard-grid">
+        <div class="metric-card">
+          <div class="metric-label">Overall Status</div>
+          <div class="metric-value" id="overallStatus">Loading...</div>
+          <div class="metric-detail">System health</div>
+        </div>
+        <div class="metric-card success">
+          <div class="metric-label">Success Rate</div>
+          <div class="metric-value" id="successRate">--%</div>
+          <div class="metric-detail">Deployment success</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Active Incidents</div>
+          <div class="metric-value" id="activeIncidents">--</div>
+          <div class="metric-detail">Requires attention</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Pending Approvals</div>
+          <div class="metric-value" id="pendingApprovals">--</div>
+          <div class="metric-detail">In approval queue</div>
+        </div>
+      </div>
+
+      <!-- Deployment Pipelines -->
+      <div class="section">
+        <div class="section-title">
+          🚀 Deployment Pipelines
+          <span class="status-indicator status-healthy" id="pipelineStatusIndicator"></span>
+        </div>
+        <div id="pipelinesList" class="pipeline-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading pipelines...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Release Gates -->
+      <div class="section">
+        <div class="section-title">
+          🚦 Release Gates
+          <span class="status-indicator status-healthy" id="gateStatusIndicator"></span>
+        </div>
+        <div id="gatesList" class="gate-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading gate status...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deployment Gate Checks -->
+      <div class="section">
+        <div class="section-title">
+          ✅ Deployment Gate Checks
+        </div>
+        <div id="deploymentGateChecksList" class="gate-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading deployment gate checks...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rollback History -->
+      <div class="section">
+        <div class="section-title">
+          ⏮️ Rollback History
+        </div>
+        <div id="rollbackHistoryList" class="incident-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading rollback history...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Incidents -->
+      <div class="section">
+        <div class="section-title">
+          🚨 Live Incidents
+          <span class="status-indicator status-healthy" id="incidentStatusIndicator"></span>
+        </div>
+        <div id="incidentsList" class="incident-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading incidents...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- DevOps Audit Trail -->
+      <div class="section">
+        <div class="section-title">
+          📋 DevOps Audit Trail
+        </div>
+        <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+          <label>Start Date: <input type="date" id="auditStartDate" class="date-input" /></label>
+          <label>End Date: <input type="date" id="auditEndDate" class="date-input" /></label>
+          <select id="auditActionType" class="action-select">
+            <option value="">All Actions</option>
+            <option value="DEPLOYMENT_APPROVED">Approvals</option>
+            <option value="DEPLOYMENT_REJECTED">Rejections</option>
+            <option value="DEPLOYMENT_PROMOTED">Promotions</option>
+            <option value="DEPLOYMENT_ROLLBACK_TRIGGERED">Rollbacks</option>
+          </select>
+          <button class="btn btn-primary" onclick="loadAuditTrail()">Filter</button>
+          <button class="btn btn-secondary" onclick="exportAuditTrail()">Export</button>
+        </div>
+        <div id="auditTrailList" class="audit-list">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading audit trail...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let authToken = '';
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', () => {
+      // Try to get token from localStorage or sessionStorage
+      authToken = localStorage.getItem('authToken') || '';
+      
+      if (!authToken) {
+        alert('Please log in first');
+        window.location.href = '/';
+        return;
+      }
+
+      refreshDashboard();
+      // Auto-refresh every 30 seconds
+      setInterval(refreshDashboard, 30000);
+    });
+
+    async function refreshDashboard() {
+      await Promise.all([
+        loadReleaseHealth(),
+        loadPipelines(),
+        loadGates(),
+        loadDeploymentGateChecks(),
+        loadRollbackHistory(),
+        loadIncidents(),
+        loadAuditTrail()
+      ]);
+      
+      document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+    }
+
+    async function apiCall(endpoint) {
+      const response = await fetch(endpoint, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.statusText}`);
+      }
+      
+      return await response.json();
+    }
+
+    async function loadReleaseHealth() {
+      try {
+        const health = await apiCall('/api/devops/release-health');
+        
+        // Update overview metrics
+        document.getElementById('overallStatus').textContent = health.overallStatus.toUpperCase();
+        document.getElementById('successRate').textContent = health.metrics.successRate + '%';
+        document.getElementById('pendingApprovals').textContent = health.deployments.pending;
+        
+        // Update overall status card color
+        const statusCard = document.querySelector('.metric-card');
+        statusCard.classList.remove('success', 'warning', 'critical');
+        if (health.overallStatus === 'healthy') {
+          statusCard.classList.add('success');
+        } else if (health.overallStatus === 'degraded') {
+          statusCard.classList.add('warning');
+        } else {
+          statusCard.classList.add('critical');
+        }
+      } catch (error) {
+        console.error('Failed to load release health:', error);
+      }
+    }
+
+    async function loadPipelines() {
+      try {
+        const pipelines = await apiCall('/api/devops/pipelines');
+        const container = document.getElementById('pipelinesList');
+        
+        if (pipelines.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>No deployment pipelines found</p></div>';
+          return;
+        }
+        
+        container.innerHTML = pipelines.map(pipeline => `
+          <div class="pipeline-item">
+            <div class="pipeline-header">
+              <div class="pipeline-name">${escapeHtml(pipeline.name)}</div>
+              <span class="pipeline-status ${pipeline.overallStatus}">${pipeline.overallStatus.toUpperCase()}</span>
+            </div>
+            <div class="pipeline-stages">
+              ${pipeline.stages.map(stage => `
+                <div class="stage ${stage.status}">
+                  <div class="stage-name">${escapeHtml(stage.name)}</div>
+                  ${stage.startedAt ? `<div class="stage-time">Started: ${new Date(stage.startedAt).toLocaleString()}</div>` : ''}
+                  ${stage.approvals && stage.approvals.length > 0 ? `
+                    <div class="approval-badge">
+                      ✓ ${stage.approvals.length} approval${stage.approvals.length > 1 ? 's' : ''}
+                    </div>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+        
+        // Update pipeline status indicator
+        const hasFailures = pipelines.some(p => p.overallStatus === 'failed');
+        const hasBlocked = pipelines.some(p => p.overallStatus === 'blocked');
+        const indicator = document.getElementById('pipelineStatusIndicator');
+        indicator.className = 'status-indicator';
+        if (hasFailures) {
+          indicator.classList.add('status-critical');
+        } else if (hasBlocked) {
+          indicator.classList.add('status-degraded');
+        } else {
+          indicator.classList.add('status-healthy');
+        }
+        
+        // Update pending approvals count
+        const pendingCount = pipelines.filter(p => 
+          p.stages.some(s => s.status === 'pending' && s.approvals)
+        ).length;
+        document.getElementById('pendingApprovals').textContent = pendingCount;
+      } catch (error) {
+        console.error('Failed to load pipelines:', error);
+        document.getElementById('pipelinesList').innerHTML = '<div class="empty-state"><p>Failed to load pipelines</p></div>';
+      }
+    }
+
+    async function loadGates() {
+      try {
+        const gates = await apiCall('/api/devops/gate-status');
+        const container = document.getElementById('gatesList');
+        
+        if (gates.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🚦</div><p>No release gates configured</p></div>';
+          return;
+        }
+        
+        container.innerHTML = gates.map(gate => `
+          <div class="gate-card">
+            <div class="gate-header">
+              <div class="gate-name">${escapeHtml(gate.gateName)}</div>
+              <span class="gate-status ${gate.status}">${gate.status.toUpperCase()}</span>
+            </div>
+            <div class="gate-details">
+              <div class="gate-detail-item">
+                <span>Last Check:</span>
+                <span>${new Date(gate.lastCheck).toLocaleString()}</span>
+              </div>
+              ${gate.details.crvStatus ? `
+                <div class="gate-detail-item">
+                  <span>CRV Validators:</span>
+                  <span>${gate.details.crvStatus.validatorResults.length}</span>
+                </div>
+              ` : ''}
+              ${gate.details.policyStatus ? `
+                <div class="gate-detail-item">
+                  <span>Policy:</span>
+                  <span>${gate.details.policyStatus.allowed ? 'Allowed' : 'Blocked'}</span>
+                </div>
+              ` : ''}
+              ${gate.details.testStatus ? `
+                <div class="gate-detail-item">
+                  <span>Tests:</span>
+                  <span>${gate.details.testStatus.passed}/${gate.details.testStatus.total} passed</span>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `).join('');
+        
+        // Update gate status indicator
+        const hasFailed = gates.some(g => g.status === 'failed');
+        const hasPending = gates.some(g => g.status === 'pending');
+        const indicator = document.getElementById('gateStatusIndicator');
+        indicator.className = 'status-indicator';
+        if (hasFailed) {
+          indicator.classList.add('status-critical');
+        } else if (hasPending) {
+          indicator.classList.add('status-degraded');
+        } else {
+          indicator.classList.add('status-healthy');
+        }
+      } catch (error) {
+        console.error('Failed to load gates:', error);
+        document.getElementById('gatesList').innerHTML = '<div class="empty-state"><p>Failed to load gate status</p></div>';
+      }
+    }
+
+    async function loadIncidents() {
+      try {
+        const summary = await apiCall('/api/devops/incidents');
+        const container = document.getElementById('incidentsList');
+        
+        // Update active incidents count
+        document.getElementById('activeIncidents').textContent = summary.active;
+        
+        // Update incident status indicator
+        const indicator = document.getElementById('incidentStatusIndicator');
+        indicator.className = 'status-indicator';
+        if (summary.critical > 0) {
+          indicator.classList.add('status-critical');
+        } else if (summary.active > 0) {
+          indicator.classList.add('status-degraded');
+        } else {
+          indicator.classList.add('status-healthy');
+        }
+        
+        if (summary.incidents.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No active incidents</p></div>';
+          return;
+        }
+        
+        container.innerHTML = summary.incidents.map(incident => `
+          <div class="incident-item ${incident.severity}">
+            <div class="incident-info">
+              <div class="incident-title">${escapeHtml(incident.title)}</div>
+              <div class="incident-meta">
+                Started: ${new Date(incident.startedAt).toLocaleString()}
+                ${incident.workflowId ? ` • Workflow: ${escapeHtml(incident.workflowId)}` : ''}
+                ${incident.affectedComponents.length > 0 ? ` • Affected: ${incident.affectedComponents.join(', ')}` : ''}
+              </div>
+            </div>
+            <span class="incident-severity ${incident.severity}">${incident.severity}</span>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Failed to load incidents:', error);
+        document.getElementById('incidentsList').innerHTML = '<div class="empty-state"><p>Failed to load incidents</p></div>';
+      }
+    }
+
+    async function loadDeploymentGateChecks() {
+      try {
+        // Get all deployments
+        const deployments = await apiCall('/api/deployments');
+        const container = document.getElementById('deploymentGateChecksList');
+        
+        // Collect gate checks from all recent deployments
+        const allGateChecks = [];
+        for (const deployment of deployments.slice(0, 10)) { // Only check recent 10
+          try {
+            const latestGateCheck = await apiCall(`/api/deployments/${deployment.deployment.id}/gate-checks/latest`);
+            if (latestGateCheck.gateCheck) {
+              allGateChecks.push({
+                ...latestGateCheck.gateCheck,
+                deploymentId: deployment.deployment.id,
+                environment: deployment.deployment.environment,
+                workflowId: deployment.version.workflowId
+              });
+            }
+          } catch (e) {
+            // Deployment may not have gate checks yet
+          }
+        }
+        
+        if (allGateChecks.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No gate checks available</p></div>';
+          return;
+        }
+        
+        container.innerHTML = allGateChecks.map(gateCheck => `
+          <div class="gate-card">
+            <div class="gate-header">
+              <div class="gate-name">${escapeHtml(gateCheck.workflowId)} (${gateCheck.environment})</div>
+              <span class="gate-status ${gateCheck.overallStatus}">${gateCheck.overallStatus.toUpperCase()}</span>
+            </div>
+            <div class="gate-details">
+              <div class="gate-detail-item">
+                <strong>CRV Pass Rate:</strong>
+                <span>${gateCheck.crvPassPercentage.toFixed(1)}%</span>
+              </div>
+              <div class="gate-detail-item">
+                <strong>Test Pass Rate:</strong>
+                <span>${gateCheck.testPassRate.toFixed(1)}%</span>
+              </div>
+              <div class="gate-detail-item">
+                <strong>Policy Approvals:</strong>
+                <span>${gateCheck.policyApprovalsMet ? '✅ Met' : '❌ Not Met'}</span>
+              </div>
+              <div class="gate-detail-item">
+                <strong>Promotion Blocked:</strong>
+                <span>${gateCheck.blockedPromotion ? '🚫 Yes' : '✅ No'}</span>
+              </div>
+              ${gateCheck.failureReasons.length > 0 ? `
+                <div class="gate-detail-item">
+                  <strong>Failures:</strong>
+                  <span>${gateCheck.failureReasons.join(', ')}</span>
+                </div>
+              ` : ''}
+              <div class="gate-detail-item">
+                <strong>Checked:</strong>
+                <span>${new Date(gateCheck.timestamp).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Failed to load deployment gate checks:', error);
+        document.getElementById('deploymentGateChecksList').innerHTML = '<div class="empty-state"><p>Failed to load gate checks</p></div>';
+      }
+    }
+
+    async function loadRollbackHistory() {
+      try {
+        // Get all deployments
+        const deployments = await apiCall('/api/deployments');
+        const container = document.getElementById('rollbackHistoryList');
+        
+        // Collect rollback triggers from all deployments
+        const allRollbackTriggers = [];
+        for (const deployment of deployments) {
+          try {
+            const response = await apiCall(`/api/deployments/${deployment.deployment.id}/rollback-triggers`);
+            if (response.rollbackTriggers && response.rollbackTriggers.length > 0) {
+              for (const trigger of response.rollbackTriggers) {
+                allRollbackTriggers.push({
+                  ...trigger,
+                  deploymentId: deployment.deployment.id,
+                  environment: deployment.deployment.environment,
+                  workflowId: deployment.version.workflowId
+                });
+              }
+            }
+          } catch (e) {
+            // Deployment may not have rollback triggers
+          }
+        }
+        
+        // Sort by triggered date (most recent first)
+        allRollbackTriggers.sort((a, b) => new Date(b.triggeredAt) - new Date(a.triggeredAt));
+        
+        if (allRollbackTriggers.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>No rollbacks triggered</p></div>';
+          return;
+        }
+        
+        container.innerHTML = allRollbackTriggers.slice(0, 10).map(trigger => `
+          <div class="incident-item ${trigger.status === 'failed' ? 'critical' : trigger.status === 'completed' ? 'resolved' : 'active'}">
+            <div class="incident-info">
+              <div class="incident-title">
+                ${escapeHtml(trigger.workflowId)} (${trigger.environment})
+              </div>
+              <div class="incident-meta">
+                Triggered: ${new Date(trigger.triggeredAt).toLocaleString()}
+                ${trigger.completedAt ? ` • Completed: ${new Date(trigger.completedAt).toLocaleString()}` : ''}
+                <br>
+                Reason: ${escapeHtml(trigger.reason)}
+                ${trigger.error ? `<br>Error: ${escapeHtml(trigger.error)}` : ''}
+              </div>
+            </div>
+            <span class="incident-severity ${trigger.status}">${trigger.status.toUpperCase()}</span>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Failed to load rollback history:', error);
+        document.getElementById('rollbackHistoryList').innerHTML = '<div class="empty-state"><p>Failed to load rollback history</p></div>';
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function loadAuditTrail() {
+      try {
+        const startDate = document.getElementById('auditStartDate')?.value;
+        const endDate = document.getElementById('auditEndDate')?.value;
+        const actionType = document.getElementById('auditActionType')?.value;
+
+        let url = '/api/devops/audit-trail?';
+        if (startDate) url += `startDate=${startDate}&`;
+        if (endDate) url += `endDate=${endDate}&`;
+        if (actionType) url += `actionType=${actionType}&`;
+
+        const response = await apiCall(url);
+        const container = document.getElementById('auditTrailList');
+
+        if (!response.events || response.events.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No audit events found</p></div>';
+          return;
+        }
+
+        container.innerHTML = response.events.map(event => {
+          const actionClass = getActionClass(event.type);
+          const actor = event.data?.approver || event.data?.rejectedBy || event.data?.promotedBy || event.data?.deployedBy || event.data?.createdBy || 'system';
+          const reason = event.data?.reason || event.data?.comment || '';
+          
+          return `
+            <div class="audit-item">
+              <div class="audit-header">
+                <div>
+                  <div class="audit-action">
+                    <span class="audit-action-badge ${actionClass}">${formatEventType(event.type)}</span>
+                  </div>
+                  <div class="audit-timestamp">${new Date(event.timestamp).toLocaleString()}</div>
+                </div>
+              </div>
+              <div class="audit-details">
+                <div class="audit-detail-item">
+                  <span class="audit-detail-label">Actor</span>
+                  <span class="audit-detail-value">${escapeHtml(actor)}</span>
+                </div>
+                <div class="audit-detail-item">
+                  <span class="audit-detail-label">Workflow ID</span>
+                  <span class="audit-detail-value">${escapeHtml(event.workflowId)}</span>
+                </div>
+                ${event.data?.deploymentId ? `
+                  <div class="audit-detail-item">
+                    <span class="audit-detail-label">Deployment ID</span>
+                    <span class="audit-detail-value">${escapeHtml(event.data.deploymentId)}</span>
+                  </div>
+                ` : ''}
+                ${event.data?.environment ? `
+                  <div class="audit-detail-item">
+                    <span class="audit-detail-label">Environment</span>
+                    <span class="audit-detail-value">${escapeHtml(event.data.environment)}</span>
+                  </div>
+                ` : ''}
+                ${event.data?.riskTier ? `
+                  <div class="audit-detail-item">
+                    <span class="audit-detail-label">Risk Tier</span>
+                    <span class="audit-detail-value">${escapeHtml(event.data.riskTier)}</span>
+                  </div>
+                ` : ''}
+                ${reason ? `
+                  <div class="audit-detail-item">
+                    <span class="audit-detail-label">Reason</span>
+                    <span class="audit-detail-value">${escapeHtml(reason)}</span>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Failed to load audit trail:', error);
+        document.getElementById('auditTrailList').innerHTML = '<div class="empty-state"><p>Failed to load audit trail</p></div>';
+      }
+    }
+
+    async function exportAuditTrail() {
+      try {
+        const startDate = document.getElementById('auditStartDate')?.value;
+        const endDate = document.getElementById('auditEndDate')?.value;
+
+        let url = '/api/devops/audit-export?';
+        if (startDate) url += `startDate=${startDate}&`;
+        if (endDate) url += `endDate=${endDate}&`;
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Export failed');
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+        a.download = `devops-audit-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        document.body.removeChild(a);
+        
+        alert('Audit trail exported successfully!');
+      } catch (error) {
+        console.error('Failed to export audit trail:', error);
+        alert('Failed to export audit trail');
+      }
+    }
+
+    function getActionClass(eventType) {
+      if (eventType.includes('APPROVED')) return 'approved';
+      if (eventType.includes('REJECTED')) return 'rejected';
+      if (eventType.includes('PROMOTED')) return 'promoted';
+      if (eventType.includes('ROLLBACK')) return 'rollback';
+      return '';
+    }
+
+    function formatEventType(eventType) {
+      return eventType
+        .replace('DEPLOYMENT_', '')
+        .replace(/_/g, ' ')
+        .toLowerCase()
+        .replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    // Initialize persona features
+    window.addEventListener('DOMContentLoaded', function() {
+      if (typeof personaManager !== 'undefined') {
+        addPersonaBadge();
+        
+        // Only DevOps engineers can access this page
+        if (!personaManager.hasPermission('accessDevOps')) {
+          document.body.innerHTML = `
+            <div style="text-align:center; padding:50px; font-family: sans-serif;">
+              <h1 style="color: #ef4444; font-size: 48px;">🔒</h1>
+              <h2 style="color: #1f2937; margin: 20px 0;">Access Denied</h2>
+              <p style="color: #6b7280; font-size: 16px;">This page requires DevOps Engineer or Administrator permissions.</p>
+              <p style="color: #9ca3af; margin-top: 20px;">Your current persona: ${personaManager.getName()}</p>
+              <button onclick="window.location.href='/persona-selector'" 
+                      style="margin-top: 30px; padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                Switch Persona
+              </button>
+            </div>
+          `;
+        }
+
+        // Restrict production deployments to devops only
+        if (!personaManager.hasPermission('deployProduction')) {
+          const deployProdBtns = document.querySelectorAll('button[onclick*="deployToProduction"]');
+          deployProdBtns.forEach(btn => {
+            btn.onclick = function(e) {
+              e.preventDefault();
+              showPermissionWarning('deploy to production');
+              return false;
+            };
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>

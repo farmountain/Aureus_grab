@@ -1,0 +1,22 @@
+{
+  "name": "@aureus/tools",
+  "version": "0.1.0",
+  "description": "Tool adapters + safety wrappers",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aureus/observability": "file:../observability",
+    "@aureus/policy": "file:../policy",
+    "@aureus/crv": "file:../crv",
+    "@aureus/world-model": "file:../world-model"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}
