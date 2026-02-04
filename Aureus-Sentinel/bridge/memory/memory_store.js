@@ -14,12 +14,16 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { randomUUID } = require('crypto');
+const { getTelemetry } = require('../observability/tracing');
+const { StructuredAuditLogger, AuditEventType, Severity } = require('../observability/audit_logger');
 
 class MemoryStore {
   constructor(config = {}) {
     this.storePath = config.storePath || './.memory';
     this.maxMemoryEntries = config.maxMemoryEntries || 10000;
     this.initialized = false;
+    this.auditLogger = config.auditLogger || null;
+    this.telemetry = getTelemetry();
   }
 
   /**
@@ -47,34 +51,52 @@ class MemoryStore {
    * @returns {Promise<string>} Context ID
    */
   async storeContext(context) {
-    await this.init();
-    
-    const contextId = context.contextId || randomUUID();
-    const timestamp = new Date().toISOString();
-    
-    const entry = {
-      contextId,
-      timestamp,
-      version: context.version || '1.0',
-      type: 'ContextSnapshot',
-      state: context.state || {},
-      meta: {
-        source: context.state?.channel || 'unknown',
-        userId: context.state?.userId,
-        storedAt: timestamp
+    return await this.telemetry.traceMemoryStore('storeContext', async (span) => {
+      await this.init();
+      
+      const contextId = context.contextId || randomUUID();
+      const timestamp = new Date().toISOString();
+      
+      const entry = {
+        contextId,
+        timestamp,
+        version: context.version || '1.0',
+        type: 'ContextSnapshot',
+        state: context.state || {},
+        meta: {
+          source: context.state?.channel || 'unknown',
+          userId: context.state?.userId,
+          storedAt: timestamp
+        }
+      };
+      
+      const filePath = path.join(
+        this.storePath, 
+        'contexts', 
+        `${contextId.replace(/[^a-zA-Z0-9-]/g, '_')}.json`
+      );
+      
+      await fs.writeFile(filePath, JSON.stringify(entry, null, 2), 'utf8');
+      
+      // Add span attributes
+      span?.setAttribute('context.id', contextId);
+      span?.setAttribute('context.userId', entry.meta.userId || 'unknown');
+      span?.setAttribute('context.source', entry.meta.source);
+      
+      // Audit log
+      if (this.auditLogger) {
+        await this.auditLogger.log(Severity.INFO, AuditEventType.MEMORY_STORED, {
+          message: 'Context snapshot stored',
+          contextId,
+          userId: entry.meta.userId,
+          channel: entry.meta.source,
+          type: 'context'
+        });
       }
-    };
-    
-    const filePath = path.join(
-      this.storePath, 
-      'contexts', 
-      `${contextId.replace(/[^a-zA-Z0-9-]/g, '_')}.json`
-    );
-    
-    await fs.writeFile(filePath, JSON.stringify(entry, null, 2), 'utf8');
-    
-    console.log(`[MemoryStore] Stored context ${contextId}`);
-    return contextId;
+      
+      console.log(`[MemoryStore] Stored context ${contextId}`);
+      return contextId;
+    });
   }
 
   /**
@@ -83,43 +105,64 @@ class MemoryStore {
    * @returns {Promise<string>} Execution ID
    */
   async storeExecution(execution) {
-    await this.init();
-    
-    const executionId = execution.executionId || randomUUID();
-    const timestamp = new Date().toISOString();
-    
-    const entry = {
-      executionId,
-      timestamp,
-      intent: execution.intent,
-      approval: execution.approval,
-      result: execution.result,
-      contextId: execution.contextId,
-      userId: execution.userId,
-      channel: execution.channel,
-      meta: {
-        tool: execution.intent?.tool,
-        risk: execution.intent?.risk,
-        approved: execution.approval?.approved,
-        storedAt: timestamp
+    return await this.telemetry.traceMemoryStore('storeExecution', async (span) => {
+      await this.init();
+      
+      const executionId = execution.executionId || randomUUID();
+      const timestamp = new Date().toISOString();
+      
+      const entry = {
+        executionId,
+        timestamp,
+        intent: execution.intent,
+        approval: execution.approval,
+        result: execution.result,
+        contextId: execution.contextId,
+        userId: execution.userId,
+        channel: execution.channel,
+        meta: {
+          tool: execution.intent?.tool,
+          risk: execution.intent?.risk,
+          approved: execution.approval?.approved,
+          storedAt: timestamp
+        }
+      };
+      
+      const filePath = path.join(
+        this.storePath, 
+        'executions', 
+        `${executionId.replace(/[^a-zA-Z0-9-]/g, '_')}.json`
+      );
+      
+      await fs.writeFile(filePath, JSON.stringify(entry, null, 2), 'utf8');
+      
+      // Also index by user
+      if (execution.userId) {
+        await this.indexByUser(execution.userId, executionId);
       }
-    };
-    
-    const filePath = path.join(
-      this.storePath, 
-      'executions', 
-      `${executionId.replace(/[^a-zA-Z0-9-]/g, '_')}.json`
-    );
-    
-    await fs.writeFile(filePath, JSON.stringify(entry, null, 2), 'utf8');
-    
-    // Also index by user
-    if (execution.userId) {
-      await this.indexByUser(execution.userId, executionId);
-    }
-    
-    console.log(`[MemoryStore] Stored execution ${executionId}`);
-    return executionId;
+      
+      // Add span attributes
+      span?.setAttribute('execution.id', executionId);
+      span?.setAttribute('execution.userId', execution.userId || 'unknown');
+      span?.setAttribute('execution.tool', entry.meta.tool || 'unknown');
+      span?.setAttribute('execution.approved', entry.meta.approved);
+      
+      // Audit log
+      if (this.auditLogger) {
+        await this.auditLogger.log(Severity.INFO, AuditEventType.MEMORY_STORED, {
+          message: 'Execution record stored',
+          executionId,
+          userId: execution.userId,
+          tool: entry.meta.tool,
+          risk: entry.meta.risk,
+          approved: entry.meta.approved,
+          type: 'execution'
+        });
+      }
+      
+      console.log(`[MemoryStore] Stored execution ${executionId}`);
+      return executionId;
+    });
   }
 
   /**

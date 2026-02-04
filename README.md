@@ -167,7 +167,7 @@ openspec/                     # OpenSpec proposals
 **Week 3** ✅ — Policy engine integration, risk assessment logic  
 **Week 4** ✅ — OpenClaw channel adapters (Telegram, Discord)  
 **Week 5** ✅ — Context engine + memory integration  
-**Week 6** — Audit trail + observability  
+**Week 6** ✅ — Audit trail + observability  
 **Week 7** — KMS production integration  
 **Week 8** — Red team security audit  
 **Week 9** — Reliability + error handling  
@@ -245,4 +245,4 @@ MIT License — See [LICENSE](LICENSE)
 
 ---
 
-**Status**: Week 5 Complete — Context engine + memory integration ✅
+**Status**: Week 6 Complete — Audit trail + observability ✅

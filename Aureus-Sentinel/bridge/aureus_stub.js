@@ -3,53 +3,95 @@
 const { randomUUID } = require('crypto');
 const { MemoryStore } = require('./memory/memory_store');
 const { ContextAggregator } = require('./memory/context_aggregator');
+const { getTelemetry } = require('./observability/tracing');
+const { StructuredAuditLogger, AuditEventType, Severity } = require('./observability/audit_logger');
 
 // Initialize memory components
 const memoryStore = new MemoryStore({ storePath: './.memory' });
 const contextAggregator = new ContextAggregator(memoryStore);
 
+// Initialize audit logger (can be passed as dependency)
+let auditLogger = null;
+
+function setAuditLogger(logger) {
+  auditLogger = logger;
+  // Pass to memory store as well
+  memoryStore.auditLogger = logger;
+}
+
 async function generateActionPlan(intentEnvelope, enrichedContext) {
-  const planId = randomUUID();
-  const timestamp = new Date().toISOString();
-
-  // Get contextual risk adjustment from history
-  const userId = intentEnvelope.context?.state?.userId;
-  const baseRisk = intentEnvelope.intent?.risk || intentEnvelope.riskLevel || 'medium';
-  const tool = intentEnvelope.intent?.tool || intentEnvelope.tool;
+  const telemetry = getTelemetry();
   
-  let riskAdjustment = null;
-  if (userId && enrichedContext) {
-    riskAdjustment = await contextAggregator.getContextualRiskAdjustment(userId, tool, baseRisk);
-  }
-  
-  const finalRisk = riskAdjustment?.adjustedRisk || baseRisk;
-  const riskMap = { low: 0.2, medium: 0.5, high: 0.8 };
-  const riskScore = riskMap[finalRisk] || 0.5;
+  return await telemetry.tracePlanGeneration(intentEnvelope.intentId || intentEnvelope.id, async (span) => {
+    const planId = randomUUID();
+    const timestamp = new Date().toISOString();
 
-  // Check for suspicious patterns
-  const suspiciousActivity = enrichedContext?.patterns?.suspiciousActivity || false;
-  const adjustedRiskScore = suspiciousActivity ? Math.min(1.0, riskScore + 0.2) : riskScore;
+    // Get contextual risk adjustment from history
+    const userId = intentEnvelope.context?.state?.userId;
+    const baseRisk = intentEnvelope.intent?.risk || intentEnvelope.riskLevel || 'medium';
+    const tool = intentEnvelope.intent?.tool || intentEnvelope.tool;
+    
+    // Add span attributes
+    span?.setAttribute('plan.id', planId);
+    span?.setAttribute('plan.userId', userId || 'unknown');
+    span?.setAttribute('plan.tool', tool);
+    span?.setAttribute('plan.baseRisk', baseRisk);
+    
+    let riskAdjustment = null;
+    if (userId && enrichedContext) {
+      riskAdjustment = await contextAggregator.getContextualRiskAdjustment(userId, tool, baseRisk);
+    }
+    
+    const finalRisk = riskAdjustment?.adjustedRisk || baseRisk;
+    const riskMap = { low: 0.2, medium: 0.5, high: 0.8 };
+    const riskScore = riskMap[finalRisk] || 0.5;
 
-  // Generate action based on tool and parameters
-  const action = {
-    actionId: randomUUID(),
-    tool: tool,
-    parameters: intentEnvelope.intent?.params || intentEnvelope.parameters,
-    riskLevel: finalRisk,
-    description: `Execute ${tool} with provided parameters`
-  };
+    // Check for suspicious patterns
+    const suspiciousActivity = enrichedContext?.patterns?.suspiciousActivity || false;
+    const adjustedRiskScore = suspiciousActivity ? Math.min(1.0, riskScore + 0.2) : riskScore;
 
-  // Build context-aware rationale
-  let rationale = `Tool ${tool} assessed as ${finalRisk} risk`;
-  if (riskAdjustment && riskAdjustment.adjustment !== 'none') {
-    rationale += ` (${riskAdjustment.adjustment}d from ${baseRisk}: ${riskAdjustment.reason})`;
-  }
-  if (suspiciousActivity) {
-    rationale += '. Suspicious activity detected in user history.';
-  }
-  
-  // Determine if human approval is required
-  const requiresHumanApproval = finalRisk === 'high' || suspiciousActivity;
+    // Audit log risk assessment
+    if (auditLogger) {
+      await auditLogger.logRiskAssessed(
+        intentEnvelope.intentId || intentEnvelope.id,
+        baseRisk,
+        finalRisk,
+        enrichedContext?.riskProfile?.trustScore,
+        riskAdjustment?.reason || 'No adjustment'
+      );
+      
+      if (suspiciousActivity) {
+        await auditLogger.logSuspiciousActivity(
+          userId,
+          'Pattern detection flagged suspicious activity',
+          enrichedContext?.patterns || {}
+        );
+      }
+    }
+    
+    span?.setAttribute('plan.finalRisk', finalRisk);
+    span?.setAttribute('plan.suspiciousActivity', suspiciousActivity);
+
+    // Generate action based on tool and parameters
+    const action = {
+      actionId: randomUUID(),
+      tool: tool,
+      parameters: intentEnvelope.intent?.params || intentEnvelope.parameters,
+      riskLevel: finalRisk,
+      description: `Execute ${tool} with provided parameters`
+    };
+
+    // Build context-aware rationale
+    let rationale = `Tool ${tool} assessed as ${finalRisk} risk`;
+    if (riskAdjustment && riskAdjustment.adjustment !== 'none') {
+      rationale += ` (${riskAdjustment.adjustment}d from ${baseRisk}: ${riskAdjustment.reason})`;
+    }
+    if (suspiciousActivity) {
+      rationale += '. Suspicious activity detected in user history.';
+    }
+    
+    // Determine if human approval is required
+    const requiresHumanApproval = finalRisk === 'high' || suspiciousActivity;
 
   const plan = {
     version: '1.0',
@@ -75,7 +117,13 @@ async function generateActionPlan(intentEnvelope, enrichedContext) {
     createdAt: timestamp
   };
 
-  return plan;
+    span?.addEvent('plan.generated', {
+      'plan.requiresHumanApproval': requiresHumanApproval,
+      'plan.actionsCount': 1
+    });
+
+    return plan;
+  });
 }
 
 function generateApproval(plan, signerKeys, opts = {}) {
@@ -173,6 +221,7 @@ module.exports = {
   generateApproval,
   shouldAutoApprove,
   processIntent,
+  setAuditLogger,
   memoryStore,
   contextAggregator
 };

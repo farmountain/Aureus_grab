@@ -1,0 +1,388 @@
+{
+  "dashboard": {
+    "title": "Aureus Sentinel - Security Overview",
+    "uid": "aureus-security",
+    "version": 1,
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 1,
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Approval Rate (Last 1h)",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "sum(rate(aureus_approvals_total{approved=\"true\"}[1h])) / sum(rate(aureus_approvals_total[1h])) * 100",
+            "legendFormat": "Approval Rate %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 50, "color": "yellow" },
+                { "value": 80, "color": "green" }
+              ]
+            }
+          }
+        },
+        "options": {
+          "colorMode": "background"
+        }
+      },
+      {
+        "id": 2,
+        "title": "Risk Distribution (Last 1h)",
+        "type": "piechart",
+        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "sum by(risk) (rate(aureus_intents_total[1h]))",
+            "legendFormat": "{{risk}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Suspicious Activity Alerts",
+        "type": "stat",
+        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "sum(increase(aureus_suspicious_activity_total[1h]))",
+            "legendFormat": "Alerts",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "green" },
+                { "value": 1, "color": "yellow" },
+                { "value": 10, "color": "red" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Average Trust Score",
+        "type": "gauge",
+        "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "avg(aureus_user_trust_score)",
+            "legendFormat": "Trust Score",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": 0, "color": "red" },
+                { "value": 0.3, "color": "yellow" },
+                { "value": 0.8, "color": "green" }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Intent Volume Over Time",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 4, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(rate(aureus_intents_total[5m])) * 60",
+            "legendFormat": "Intents/min",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Intents per minute",
+            "format": "short"
+          },
+          {
+            "label": null,
+            "format": "short"
+          }
+        ],
+        "legend": {
+          "show": true
+        }
+      },
+      {
+        "id": 6,
+        "title": "Approval vs Denial Rate",
+        "type": "graph",
+        "gridPos": { "x": 12, "y": 4, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(rate(aureus_approvals_total{approved=\"true\"}[5m])) * 60",
+            "legendFormat": "Approved/min",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(aureus_approvals_total{approved=\"false\"}[5m])) * 60",
+            "legendFormat": "Denied/min",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Rate (per minute)",
+            "format": "short"
+          },
+          {
+            "label": null,
+            "format": "short"
+          }
+        ],
+        "seriesOverrides": [
+          {
+            "alias": "Denied/min",
+            "color": "#F2495C"
+          },
+          {
+            "alias": "Approved/min",
+            "color": "#73BF69"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Top Tools by Usage",
+        "type": "bargauge",
+        "gridPos": { "x": 0, "y": 10, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "topk(10, sum by(tool) (increase(aureus_intents_total[1h])))",
+            "legendFormat": "{{tool}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient"
+        }
+      },
+      {
+        "id": 8,
+        "title": "Signature Verification Failures",
+        "type": "graph",
+        "gridPos": { "x": 8, "y": 10, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(rate(aureus_signature_verifications_total{result=\"failed\"}[5m])) * 60",
+            "legendFormat": "Failures/min",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Failures per minute",
+            "format": "short"
+          },
+          {
+            "label": null,
+            "format": "short"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [5],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "Signature Verification Failures",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 9,
+        "title": "Memory Store Operations",
+        "type": "graph",
+        "gridPos": { "x": 16, "y": 10, "w": 8, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum by(operation) (rate(aureus_memory_operations_total[5m])) * 60",
+            "legendFormat": "{{operation}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Operations per minute",
+            "format": "short"
+          },
+          {
+            "label": null,
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Response Time Distribution (p50, p95, p99)",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(aureus_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(aureus_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(aureus_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Latency (seconds)",
+            "format": "s"
+          },
+          {
+            "label": null,
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Active Users (Last 10min)",
+        "type": "stat",
+        "gridPos": { "x": 12, "y": 16, "w": 6, "h": 6 },
+        "targets": [
+          {
+            "expr": "count(count by(userId) (aureus_intents_total))",
+            "legendFormat": "Active Users",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Risk Assessment Adjustments",
+        "type": "table",
+        "gridPos": { "x": 18, "y": 16, "w": 6, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum by(adjustment) (increase(aureus_risk_adjustments_total[1h]))",
+            "legendFormat": "{{adjustment}}",
+            "refId": "A",
+            "format": "table"
+          }
+        ],
+        "options": {
+          "showHeader": true
+        },
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true
+              },
+              "indexByName": {},
+              "renameByName": {
+                "adjustment": "Adjustment Type",
+                "Value": "Count"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "environment",
+          "type": "query",
+          "query": "label_values(aureus_intents_total, environment)",
+          "current": {
+            "value": "production"
+          }
+        },
+        {
+          "name": "instance",
+          "type": "query",
+          "query": "label_values(aureus_intents_total, instance)",
+          "current": {
+            "value": "$__all"
+          }
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "expr": "changes(aureus_build_info[5m]) > 0",
+          "tagKeys": "version",
+          "textFormat": "Deployment: {{version}}",
+          "titleFormat": "Deployment"
+        }
+      ]
+    }
+  }
+}
