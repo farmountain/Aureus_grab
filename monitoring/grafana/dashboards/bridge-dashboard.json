@@ -1,0 +1,330 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "aureus-bridge",
+    "title": "Aureus Sentinel - Bridge Service",
+    "tags": ["aureus", "bridge", "signatures"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "targets": [
+          {
+            "expr": "rate(bridge_signatures_total[5m]) * 60",
+            "legendFormat": "Signatures/min"
+          }
+        ],
+        "title": "Signature Rate",
+        "type": "stat",
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        },
+        "id": 2,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(bridge_signature_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p95 Latency"
+          }
+        ],
+        "title": "p95 Signature Latency",
+        "type": "stat",
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": 0,
+                  "color": "green"
+                },
+                {
+                  "value": 100,
+                  "color": "yellow"
+                },
+                {
+                  "value": 500,
+                  "color": "red"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 0
+        },
+        "id": 3,
+        "targets": [
+          {
+            "expr": "rate(bridge_errors_total[5m]) / rate(bridge_signatures_total[5m]) * 100",
+            "legendFormat": "Error Rate"
+          }
+        ],
+        "title": "Error Rate",
+        "type": "stat",
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": 0,
+                  "color": "green"
+                },
+                {
+                  "value": 1,
+                  "color": "yellow"
+                },
+                {
+                  "value": 5,
+                  "color": "red"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 0
+        },
+        "id": 4,
+        "targets": [
+          {
+            "expr": "sum(bridge_signatures_total)",
+            "legendFormat": "Total Signatures"
+          }
+        ],
+        "title": "Total Signatures (All Time)",
+        "type": "stat",
+        "options": {
+          "graphMode": "none",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 4
+        },
+        "id": 5,
+        "targets": [
+          {
+            "expr": "rate(bridge_signatures_total[5m])",
+            "legendFormat": "Signature Rate"
+          }
+        ],
+        "title": "Signature Throughput Over Time",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "signatures/s",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 12
+        },
+        "id": 6,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(bridge_signature_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(bridge_signature_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(bridge_signature_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p99"
+          }
+        ],
+        "title": "Signature Latency Percentiles",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "duration (ms)",
+            "format": "ms"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 12
+        },
+        "id": 7,
+        "targets": [
+          {
+            "expr": "rate(bridge_errors_total[5m])",
+            "legendFormat": "Errors/s"
+          }
+        ],
+        "title": "Error Rate Over Time",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "errors/s",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 20
+        },
+        "id": 8,
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total{job=\"bridge\"}[5m])",
+            "legendFormat": "CPU Usage"
+          }
+        ],
+        "title": "CPU Usage",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "cores",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 20
+        },
+        "id": 9,
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes{job=\"bridge\"}",
+            "legendFormat": "Memory Usage"
+          }
+        ],
+        "title": "Memory Usage",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "bytes",
+            "format": "bytes"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Loki",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 28
+        },
+        "id": 10,
+        "targets": [
+          {
+            "expr": "{job=\"bridge\"}",
+            "refId": "A"
+          }
+        ],
+        "title": "Bridge Logs",
+        "type": "logs",
+        "options": {
+          "showLabels": false,
+          "showTime": true,
+          "wrapLogMessage": true
+        }
+      }
+    ]
+  }
+}

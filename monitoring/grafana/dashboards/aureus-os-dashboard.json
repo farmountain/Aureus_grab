@@ -1,0 +1,379 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "aureus-os",
+    "title": "Aureus Sentinel - Aureus OS (Policy Engine)",
+    "tags": ["aureus", "policy", "ml"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "targets": [
+          {
+            "expr": "rate(aureus_os_risk_assessments_total[5m]) * 60",
+            "legendFormat": "Assessments/min"
+          }
+        ],
+        "title": "Risk Assessment Rate",
+        "type": "stat",
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        },
+        "id": 2,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(aureus_os_assessment_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p95 Latency"
+          }
+        ],
+        "title": "p95 Assessment Latency",
+        "type": "stat",
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": 0,
+                  "color": "green"
+                },
+                {
+                  "value": 500,
+                  "color": "yellow"
+                },
+                {
+                  "value": 2000,
+                  "color": "red"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 0
+        },
+        "id": 3,
+        "targets": [
+          {
+            "expr": "rate(aureus_os_policy_violations_total[5m]) * 60",
+            "legendFormat": "Violations/min"
+          }
+        ],
+        "title": "Policy Violations",
+        "type": "stat",
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": 0,
+                  "color": "green"
+                },
+                {
+                  "value": 5,
+                  "color": "yellow"
+                },
+                {
+                  "value": 10,
+                  "color": "red"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 0
+        },
+        "id": 4,
+        "targets": [
+          {
+            "expr": "rate(aureus_os_errors_total[5m]) / rate(aureus_os_risk_assessments_total[5m]) * 100",
+            "legendFormat": "Error Rate"
+          }
+        ],
+        "title": "Error Rate",
+        "type": "stat",
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": 0,
+                  "color": "green"
+                },
+                {
+                  "value": 1,
+                  "color": "yellow"
+                },
+                {
+                  "value": 5,
+                  "color": "red"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 4
+        },
+        "id": 5,
+        "targets": [
+          {
+            "expr": "rate(aureus_os_risk_assessments_total{risk_level=\"low\"}[5m])",
+            "legendFormat": "Low Risk"
+          },
+          {
+            "expr": "rate(aureus_os_risk_assessments_total{risk_level=\"medium\"}[5m])",
+            "legendFormat": "Medium Risk"
+          },
+          {
+            "expr": "rate(aureus_os_risk_assessments_total{risk_level=\"high\"}[5m])",
+            "legendFormat": "High Risk"
+          }
+        ],
+        "title": "Risk Assessments by Level",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "assessments/s",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 4
+        },
+        "id": 6,
+        "targets": [
+          {
+            "expr": "sum by (risk_level) (increase(aureus_os_risk_assessments_total[1h]))",
+            "legendFormat": "{{risk_level}}"
+          }
+        ],
+        "title": "Risk Distribution (Last Hour)",
+        "type": "piechart",
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right"
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 12
+        },
+        "id": 7,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(aureus_os_assessment_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(aureus_os_assessment_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(aureus_os_assessment_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p99"
+          }
+        ],
+        "title": "Assessment Latency Percentiles",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "duration (ms)",
+            "format": "ms"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 12
+        },
+        "id": 8,
+        "targets": [
+          {
+            "expr": "rate(aureus_os_policy_violations_total[5m])",
+            "legendFormat": "Policy Violations/s"
+          }
+        ],
+        "title": "Policy Violations Over Time",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "violations/s",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 20
+        },
+        "id": 9,
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total{job=\"aureus-os\"}[5m])",
+            "legendFormat": "CPU Usage"
+          }
+        ],
+        "title": "CPU Usage",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "cores",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 20
+        },
+        "id": 10,
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes{job=\"aureus-os\"}",
+            "legendFormat": "Memory Usage"
+          }
+        ],
+        "title": "Memory Usage (ML Models)",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "bytes",
+            "format": "bytes"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Loki",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 28
+        },
+        "id": 11,
+        "targets": [
+          {
+            "expr": "{job=\"aureus-os\"}",
+            "refId": "A"
+          }
+        ],
+        "title": "Aureus OS Logs",
+        "type": "logs",
+        "options": {
+          "showLabels": false,
+          "showTime": true,
+          "wrapLogMessage": true
+        }
+      }
+    ]
+  }
+}

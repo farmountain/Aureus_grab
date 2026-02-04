@@ -1,0 +1,414 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "aureus-openclaw",
+    "title": "Aureus Sentinel - OpenClaw (Channels)",
+    "tags": ["aureus", "openclaw", "channels"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "targets": [
+          {
+            "expr": "rate(openclaw_requests_total[5m]) * 60",
+            "legendFormat": "Requests/min"
+          }
+        ],
+        "title": "Request Rate",
+        "type": "stat",
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        },
+        "id": 2,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(openclaw_request_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p95 Latency"
+          }
+        ],
+        "title": "p95 Request Latency",
+        "type": "stat",
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "decimals": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": 0,
+                  "color": "green"
+                },
+                {
+                  "value": 200,
+                  "color": "yellow"
+                },
+                {
+                  "value": 1000,
+                  "color": "red"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 0
+        },
+        "id": 3,
+        "targets": [
+          {
+            "expr": "openclaw_active_connections",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "title": "Active WebSocket Connections",
+        "type": "stat",
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": 0,
+                  "color": "green"
+                },
+                {
+                  "value": 500,
+                  "color": "yellow"
+                },
+                {
+                  "value": 1000,
+                  "color": "red"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 0
+        },
+        "id": 4,
+        "targets": [
+          {
+            "expr": "rate(openclaw_errors_total[5m]) / rate(openclaw_requests_total[5m]) * 100",
+            "legendFormat": "Error Rate"
+          }
+        ],
+        "title": "Error Rate",
+        "type": "stat",
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": 0,
+                  "color": "green"
+                },
+                {
+                  "value": 1,
+                  "color": "yellow"
+                },
+                {
+                  "value": 5,
+                  "color": "red"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 4
+        },
+        "id": 5,
+        "targets": [
+          {
+            "expr": "rate(openclaw_requests_total{channel=\"telegram\"}[5m])",
+            "legendFormat": "Telegram"
+          },
+          {
+            "expr": "rate(openclaw_requests_total{channel=\"discord\"}[5m])",
+            "legendFormat": "Discord"
+          },
+          {
+            "expr": "rate(openclaw_requests_total{channel=\"slack\"}[5m])",
+            "legendFormat": "Slack"
+          },
+          {
+            "expr": "rate(openclaw_requests_total{channel=\"web\"}[5m])",
+            "legendFormat": "Web"
+          }
+        ],
+        "title": "Requests by Channel",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "requests/s",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 4
+        },
+        "id": 6,
+        "targets": [
+          {
+            "expr": "sum by (channel) (increase(openclaw_requests_total[1h]))",
+            "legendFormat": "{{channel}}"
+          }
+        ],
+        "title": "Channel Distribution (Last Hour)",
+        "type": "piechart",
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "right"
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 12
+        },
+        "id": 7,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(openclaw_request_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(openclaw_request_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(openclaw_request_duration_seconds_bucket[5m])) * 1000",
+            "legendFormat": "p99"
+          }
+        ],
+        "title": "Request Latency Percentiles",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "duration (ms)",
+            "format": "ms"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 12
+        },
+        "id": 8,
+        "targets": [
+          {
+            "expr": "openclaw_active_connections",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "title": "WebSocket Connections Over Time",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "connections",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 20
+        },
+        "id": 9,
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total{job=\"openclaw\"}[5m])",
+            "legendFormat": "CPU Usage"
+          }
+        ],
+        "title": "CPU Usage",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "cores",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 20
+        },
+        "id": 10,
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes{job=\"openclaw\"}",
+            "legendFormat": "Memory Usage"
+          }
+        ],
+        "title": "Memory Usage",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "bytes",
+            "format": "bytes"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 28
+        },
+        "id": 11,
+        "targets": [
+          {
+            "expr": "rate(openclaw_messages_sent_total[5m])",
+            "legendFormat": "Messages Sent/s"
+          },
+          {
+            "expr": "rate(openclaw_messages_received_total[5m])",
+            "legendFormat": "Messages Received/s"
+          }
+        ],
+        "title": "Message Throughput",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "messages/s",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Loki",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 36
+        },
+        "id": 12,
+        "targets": [
+          {
+            "expr": "{job=\"openclaw\"}",
+            "refId": "A"
+          }
+        ],
+        "title": "OpenClaw Logs",
+        "type": "logs",
+        "options": {
+          "showLabels": false,
+          "showTime": true,
+          "wrapLogMessage": true
+        }
+      }
+    ]
+  }
+}

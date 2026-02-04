@@ -1,0 +1,415 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "aureus-system-overview",
+    "title": "Aureus Sentinel - System Overview",
+    "tags": ["aureus", "overview"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "gridPos": {
+          "h": 3,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "title": "System Status",
+        "type": "row"
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 1
+        },
+        "id": 2,
+        "targets": [
+          {
+            "expr": "up{job=\"bridge\"}",
+            "legendFormat": "Bridge"
+          }
+        ],
+        "title": "Bridge Status",
+        "type": "stat",
+        "options": {
+          "graphMode": "none",
+          "colorMode": "background",
+          "textMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "type": "value",
+                "options": {
+                  "0": {
+                    "text": "DOWN",
+                    "color": "red"
+                  },
+                  "1": {
+                    "text": "UP",
+                    "color": "green"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 1
+        },
+        "id": 3,
+        "targets": [
+          {
+            "expr": "up{job=\"aureus-os\"}",
+            "legendFormat": "Aureus OS"
+          }
+        ],
+        "title": "Aureus OS Status",
+        "type": "stat",
+        "options": {
+          "graphMode": "none",
+          "colorMode": "background"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "type": "value",
+                "options": {
+                  "0": {
+                    "text": "DOWN",
+                    "color": "red"
+                  },
+                  "1": {
+                    "text": "UP",
+                    "color": "green"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 1
+        },
+        "id": 4,
+        "targets": [
+          {
+            "expr": "up{job=\"openclaw\"}",
+            "legendFormat": "OpenClaw"
+          }
+        ],
+        "title": "OpenClaw Status",
+        "type": "stat",
+        "options": {
+          "graphMode": "none",
+          "colorMode": "background"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "type": "value",
+                "options": {
+                  "0": {
+                    "text": "DOWN",
+                    "color": "red"
+                  },
+                  "1": {
+                    "text": "UP",
+                    "color": "green"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 1
+        },
+        "id": 5,
+        "targets": [
+          {
+            "expr": "count(up{job=~\"bridge|aureus-os|openclaw\"} == 1) / count(up{job=~\"bridge|aureus-os|openclaw\"})",
+            "legendFormat": "Overall Health"
+          }
+        ],
+        "title": "Overall System Health",
+        "type": "gauge",
+        "options": {
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "value": 0,
+                  "color": "red"
+                },
+                {
+                  "value": 0.5,
+                  "color": "yellow"
+                },
+                {
+                  "value": 0.8,
+                  "color": "green"
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 5
+        },
+        "id": 6,
+        "title": "Request Throughput",
+        "type": "row"
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 6
+        },
+        "id": 7,
+        "targets": [
+          {
+            "expr": "rate(bridge_signatures_total[5m])",
+            "legendFormat": "Bridge Signatures/s"
+          },
+          {
+            "expr": "rate(aureus_os_risk_assessments_total[5m])",
+            "legendFormat": "Risk Assessments/s"
+          },
+          {
+            "expr": "rate(openclaw_requests_total[5m])",
+            "legendFormat": "OpenClaw Requests/s"
+          }
+        ],
+        "title": "Request Rate by Service",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "requests/s",
+            "format": "reqps"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 6
+        },
+        "id": 8,
+        "targets": [
+          {
+            "expr": "rate(bridge_errors_total[5m])",
+            "legendFormat": "Bridge Errors/s"
+          },
+          {
+            "expr": "rate(aureus_os_errors_total[5m])",
+            "legendFormat": "Aureus OS Errors/s"
+          },
+          {
+            "expr": "rate(openclaw_errors_total[5m])",
+            "legendFormat": "OpenClaw Errors/s"
+          }
+        ],
+        "title": "Error Rate by Service",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "errors/s",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 14
+        },
+        "id": 9,
+        "title": "Latency",
+        "type": "row"
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 15
+        },
+        "id": 10,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(bridge_signature_duration_seconds_bucket[5m]))",
+            "legendFormat": "Bridge p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(bridge_signature_duration_seconds_bucket[5m]))",
+            "legendFormat": "Bridge p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(bridge_signature_duration_seconds_bucket[5m]))",
+            "legendFormat": "Bridge p99"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(aureus_os_assessment_duration_seconds_bucket[5m]))",
+            "legendFormat": "Aureus OS p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(aureus_os_assessment_duration_seconds_bucket[5m]))",
+            "legendFormat": "Aureus OS p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(aureus_os_assessment_duration_seconds_bucket[5m]))",
+            "legendFormat": "Aureus OS p99"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(openclaw_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "OpenClaw p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(openclaw_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "OpenClaw p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(openclaw_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "OpenClaw p99"
+          }
+        ],
+        "title": "Latency Percentiles (All Services)",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "duration",
+            "format": "s"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 23
+        },
+        "id": 11,
+        "title": "Resource Usage",
+        "type": "row"
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        },
+        "id": 12,
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total{job=~\"bridge|aureus-os|openclaw\"}[5m])",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "title": "CPU Usage by Service",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "CPU cores",
+            "format": "short"
+          },
+          {
+            "show": false
+          }
+        ]
+      },
+      {
+        "datasource": "Prometheus",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        },
+        "id": 13,
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes{job=~\"bridge|aureus-os|openclaw\"}",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "title": "Memory Usage by Service",
+        "type": "graph",
+        "yaxes": [
+          {
+            "label": "bytes",
+            "format": "bytes"
+          },
+          {
+            "show": false
+          }
+        ]
+      }
+    ]
+  }
+}
