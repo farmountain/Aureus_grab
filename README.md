@@ -168,7 +168,7 @@ openspec/                     # OpenSpec proposals
 **Week 4** ✅ — OpenClaw channel adapters (Telegram, Discord)  
 **Week 5** ✅ — Context engine + memory integration  
 **Week 6** ✅ — Audit trail + observability  
-**Week 7** — KMS production integration  
+**Week 7** ✅ — KMS production integration  
 **Week 8** — Red team security audit  
 **Week 9** — Reliability + error handling  
 **Week 10** — Performance + load testing  
@@ -245,4 +245,4 @@ MIT License — See [LICENSE](LICENSE)
 
 ---
 
-**Status**: Week 6 Complete — Audit trail + observability ✅
+**Status**: Week 7 Complete — KMS production integration ✅
