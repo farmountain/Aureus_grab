@@ -1,7 +1,13 @@
 const http = require('http');
 const { signApproval, generateKeypair, canonicalize } = require('./signer');
+const { validateIntent } = require('./schema_validator');
+const { processIntent } = require('./aureus_stub');
+const { getEventStore } = require('./event_store');
+const { getAuditLogger } = require('./audit_logger');
 
 const PORT = process.env.PORT || 3001;
+const eventStore = getEventStore();
+const auditLogger = getAuditLogger();
 
 function jsonResponse(res, status, obj){
   const body = JSON.stringify(obj);
@@ -28,6 +34,84 @@ function ensureKeys(){
 }
 
 const server = http.createServer((req, res) => {
+  // POST /intents - Receive intent, generate plan, issue approval
+  if(req.method === 'POST' && req.url === '/intents'){
+    let data = '';
+    req.on('data', chunk => data += chunk);
+    req.on('end', async () => {
+      try{
+        const intentEnvelope = JSON.parse(data);
+        
+        // Log intent received (event store)
+        eventStore.logIntentReceived(intentEnvelope, {
+          source: 'bridge',
+          clientIp: req.socket.remoteAddress
+        });
+
+        // Log to tamper-evident audit chain
+        auditLogger.logIntentReceived(intentEnvelope, {
+          clientIp: req.socket.remoteAddress,
+          userAgent: req.headers['user-agent']
+        });
+
+        // Validate intent against schema
+        const validation = validateIntent(intentEnvelope);
+        if (!validation.valid) {
+          jsonResponse(res, 400, {
+            error: 'Invalid intent schema',
+            details: validation.errors
+          });
+          return;
+        }
+
+        // Process intent through Aureus stub
+        const keys = ensureKeys();
+        const result = await processIntent(intentEnvelope, keys);
+
+        // Log plan generation
+        eventStore.logPlanGenerated(result.plan, intentEnvelope.intentId);
+        auditLogger.logPlanGenerated(result.plan, { intentId: intentEnvelope.intentId });
+
+        // If human approval required
+        if (result.requiresHumanApproval) {
+          eventStore.logApprovalDenied(result.plan.planId, result.reason);
+          auditLogger.logApprovalDenied(result.plan.planId, result.reason, {
+            riskLevel: result.plan.riskAssessment.overallRiskLevel
+          });
+          jsonResponse(res, 202, {
+            plan: result.plan,
+            requiresHumanApproval: true,
+            reason: result.reason,
+            message: 'Plan requires human approval'
+          });
+          return;
+        }
+
+        // Sign the approval
+        const sig = signApproval(result.approval, keys.privateKey);
+        result.approval.signature = sig;
+
+        // Log approval issued
+        eventStore.logApprovalIssued(result.approval, result.plan.planId);
+        auditLogger.logApprovalIssued(result.approval, {
+          planId: result.plan.planId,
+          intentId: intentEnvelope.intentId
+        });
+
+        // Return plan and signed approval
+        jsonResponse(res, 200, {
+          plan: result.plan,
+          approval: result.approval
+        });
+
+      }catch(e){
+        console.error('Error processing intent:', e);
+        jsonResponse(res, 500, { error: e.message });
+      }
+    });
+    return;
+  }
+
   if(req.method === 'POST' && req.url === '/sign'){
     let data = '';
     req.on('data', chunk => data += chunk);
