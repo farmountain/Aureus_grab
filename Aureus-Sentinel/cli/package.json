@@ -1,0 +1,37 @@
+{
+  "name": "@aureus-sentinel/cli",
+  "version": "1.0.0",
+  "description": "Command-line interface for Aureus Sentinel Bridge",
+  "main": "aureus-cli.js",
+  "bin": {
+    "aureus": "./aureus-cli.js"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "aureus",
+    "sentinel",
+    "cli",
+    "bridge",
+    "cryptography",
+    "signing"
+  ],
+  "author": "Aureus Sentinel Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/aureus-sentinel"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@aureus-sentinel/bridge-client": "^1.0.0",
+    "commander": "^11.0.0",
+    "ajv": "^8.12.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

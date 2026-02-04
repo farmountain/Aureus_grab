@@ -1,0 +1,46 @@
+{
+  "name": "@aureus-sentinel/bridge-client",
+  "version": "1.0.0",
+  "description": "Official JavaScript/TypeScript SDK for Aureus Sentinel Bridge",
+  "main": "bridge-client.js",
+  "types": "bridge-client.d.ts",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "aureus",
+    "sentinel",
+    "bridge",
+    "cryptography",
+    "signing",
+    "verification",
+    "security",
+    "intent",
+    "agent"
+  ],
+  "author": "Aureus Sentinel Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/aureus-sentinel"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/aureus-sentinel/issues"
+  },
+  "homepage": "https://github.com/yourusername/aureus-sentinel#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "bridge-client.js",
+    "bridge-client.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "jest": "^29.0.0"
+  }
+}
