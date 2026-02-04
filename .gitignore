@@ -11,6 +11,10 @@ knowledgebase/Aureus_Agentic_OS/
 knowledgebase/openclaw/
 knowledgebase/Aureus-Sentinel/
 
+# Root-level external repos (should not be committed)
+Aureus_Agentic_OS/
+openclaw/
+
 # Planning artifacts (not implementation)
 weeks/
 adoption/

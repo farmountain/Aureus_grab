@@ -122,6 +122,18 @@ Aureus-Sentinel/     # Orchestration repo
 │   └── executor_wrapper_reference.js
 └── ci/                       # CI workflows
 
+openclaw/                     # OpenClaw integration layer
+├── src/
+│   ├── telegram/
+│   │   └── bridge-adapter.js  # Telegram adapter
+│   ├── discord/
+│   │   └── bridge-adapter.js  # Discord adapter
+│   └── executor/
+│       └── executor-wrapper.js # Signature enforcement
+├── tests/
+│   └── e2e-flow.test.js      # E2E integration tests
+└── package.json
+
 docs/                         # Project documentation
 ├── PRD_Aureus_Project.md     # Product requirements
 ├── Requirements_Aureus.md    # Acceptance criteria
@@ -152,8 +164,8 @@ openspec/                     # OpenSpec proposals
 
 **Week 1** ✅ — Foundation scaffold, contracts, signer PoC, CI evidence gate  
 **Week 2** ✅ — Contract hardening with validation rules  
-**Week 3** — Policy engine integration, risk assessment logic  
-**Week 4** — OpenClaw channel adapters (Telegram, Discord)  
+**Week 3** ✅ — Policy engine integration, risk assessment logic  
+**Week 4** ✅ — OpenClaw channel adapters (Telegram, Discord)  
 **Week 5** — Context engine + memory integration  
 **Week 6** — Audit trail + observability  
 **Week 7** — KMS production integration  
@@ -233,4 +245,4 @@ MIT License — See [LICENSE](LICENSE)
 
 ---
 
-**Status**: Week 2 Complete — Contract hardening with validation rules ✅
+**Status**: Week 4 Complete — OpenClaw channel adapters (Telegram, Discord) ✅
