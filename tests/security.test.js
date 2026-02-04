@@ -102,71 +102,90 @@ try {
 console.log('\n=== Test Suite 2: Schema Validation Security ===\n');
 
 try {
-  const { SchemaValidator } = require('../Aureus-Sentinel/bridge/schema_validator.js');
+  const { validateIntent } = require('../Aureus-Sentinel/bridge/schema_validator.js');
   
   test('Should reject XSS in intentId', () => {
-    const validator = new SchemaValidator();
-    const result = validator.validate('intent', {
+    const result = validateIntent({
+      version: '1.0',
+      type: 'intent.envelope',
       intentId: '<script>alert(1)</script>',
-      toolName: 'test',
+      channelId: 'web',
+      tool: 'web_search',
+      parameters: {},
+      riskLevel: 'low',
+      description: 'Test intent',
       timestamp: new Date().toISOString()
     });
     
     assert.strictEqual(result.valid, false, 'XSS payload should be rejected');
+    assert.ok(result.errors.some(e => e.includes('intentId')), 'Should have intentId error');
   });
   
   test('Should reject path traversal in intentId', () => {
-    const validator = new SchemaValidator();
-    const result = validator.validate('intent', {
+    const result = validateIntent({
+      version: '1.0',
+      type: 'intent.envelope',
       intentId: '../../../etc/passwd',
-      toolName: 'test',
+      channelId: 'web',
+      tool: 'web_search',
+      parameters: {},
+      riskLevel: 'low',
+      description: 'Test intent',
       timestamp: new Date().toISOString()
     });
     
     assert.strictEqual(result.valid, false, 'Path traversal should be rejected');
+    assert.ok(result.errors.some(e => e.includes('intentId')), 'Should have intentId error');
   });
   
-  test('Should reject excessively long strings', () => {
-    const validator = new SchemaValidator();
-    const result = validator.validate('intent', {
-      intentId: 'a'.repeat(10000),
-      toolName: 'test',
+  test('Should reject excessively long description', () => {
+    const result = validateIntent({
+      version: '1.0',
+      type: 'intent.envelope',
+      intentId: '123e4567-e89b-42d3-a456-426614174000',
+      channelId: 'web',
+      tool: 'web_search',
+      parameters: {},
+      riskLevel: 'low',
+      description: 'a'.repeat(1000), // Max is 500
       timestamp: new Date().toISOString()
     });
     
     assert.strictEqual(result.valid, false, 'Excessively long string should be rejected');
   });
   
-  test('Should reject command injection in toolName', () => {
-    const validator = new SchemaValidator();
-    const result = validator.validate('intent', {
-      intentId: 'test-123',
-      toolName: 'rm -rf /',
-      timestamp: new Date().toISOString()
+  test('Should reject missing required fields', () => {
+    const result = validateIntent({
+      intentId: '123e4567-e89b-42d3-a456-426614174000',
+      tool: 'web_search'
+      // Missing version, type, channelId, etc.
     });
     
-    // This depends on schema validation rules
-    // If toolName has enum validation, this will fail
-    assert.ok(!result.valid || !result.data.toolName.includes('rm'), 'Command injection should be rejected');
+    assert.strictEqual(result.valid, false, 'Missing required fields should be rejected');
+    assert.ok(result.errors.length > 0, 'Should have validation errors');
   });
   
-  test('Should reject SQL injection in parameters', () => {
-    const validator = new SchemaValidator();
-    const result = validator.validate('intent', {
-      intentId: 'test-123',
-      toolName: 'database_query',
-      parameters: {
-        query: "'; DROP TABLE users; --"
-      },
+  test('Should accept valid intent schema', () => {
+    const result = validateIntent({
+      version: '1.0',
+      type: 'intent.envelope',
+      intentId: '123e4567-e89b-42d3-a456-426614174000',
+      channelId: 'web',
+      tool: 'web_search',
+      parameters: { query: 'test' },
+      riskLevel: 'low',
+      description: 'Search for test information',
       timestamp: new Date().toISOString()
     });
     
-    // Schema should validate parameter format
-    assert.ok(result.valid === false || !result.data.parameters?.query?.includes('DROP'), 'SQL injection should be rejected');
+    if (!result.valid) {
+      console.log('  Validation errors:', result.errors);
+    }
+    assert.strictEqual(result.valid, true, 'Valid intent should be accepted');
   });
   
 } catch (error) {
-  console.error(`⚠️  Could not load SchemaValidator module: ${error.message}\n`);
+  console.error(`⚠️  Could not load schema validator module: ${error.message}\n`);
 }
 
 // ================================

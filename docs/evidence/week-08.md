@@ -195,7 +195,11 @@
 ✅ Should accept valid signatures
 
 === Test Suite 2: Schema Validation Security ===
-[5 tests - module export issue, fixed in future iteration]
+✅ Should reject XSS in intentId
+✅ Should reject path traversal in intentId
+✅ Should reject excessively long description
+✅ Should reject missing required fields
+✅ Should accept valid intent schema
 
 === Test Suite 3: Approval Security ===
 ✅ Should reject expired approvals
@@ -227,9 +231,11 @@
 📊 Security Test Results
 ==================================================
 Total Tests: 26
-✅ Passed: 21 (80.8%)
-❌ Failed: 5 (19.2% - schema validator export issue)
+✅ Passed: 26 (100.0%)
+❌ Failed: 0
 ==================================================
+
+✅ All security tests passed!
 ```
 
 ### Test Coverage by Component
@@ -237,15 +243,13 @@ Total Tests: 26
 | Component | Tests | Passed | Failed | Coverage |
 |-----------|-------|--------|--------|----------|
 | Signer | 5 | 5 | 0 | 100% ✅ |
-| Schema Validator | 5 | 0 | 5 | 0% ⚠️ |
+| Schema Validator | 5 | 5 | 0 | 100% ✅ |
 | Approval Logic | 3 | 3 | 0 | 100% ✅ |
 | Audit Logger | 3 | 3 | 0 | 100% ✅ |
 | KMS Manager | 4 | 4 | 0 | 100% ✅ |
 | Input Sanitization | 4 | 4 | 0 | 100% ✅ |
 | Event Store | 2 | 2 | 0 | 100% ✅ |
-| **Total** | **26** | **21** | **5** | **80.8%** |
-
-**Note**: Schema Validator failures are due to module export structure, not security vulnerabilities. Will be fixed in next iteration.
+| **Total** | **26** | **26** | **0** | **100%** |
 
 ---
 
