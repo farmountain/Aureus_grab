@@ -1,0 +1,418 @@
+# Aureus Sentinel Complete Stack - Docker Compose
+# Orchestrates OpenClaw + Bridge + Aureus OS with dependencies
+
+version: '3.8'
+
+networks:
+  aureus-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  vector-db-data:
+  prometheus-data:
+  grafana-data:
+
+services:
+  # ============================================================================
+  # Infrastructure Layer
+  # ============================================================================
+  
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: aureus-postgres
+    environment:
+      POSTGRES_USER: aureus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aureus_dev_password}
+      POSTGRES_MULTIPLE_DATABASES: openclaw,bridge,aureus_os
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    ports:
+      - "5432:5432"
+    networks:
+      - aureus-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aureus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: aureus-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - aureus-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Weaviate Vector Database (for Aureus OS memory)
+  vector-db:
+    image: semitechnologies/weaviate:latest
+    container_name: aureus-weaviate
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      CLUSTER_HOSTNAME: 'weaviate'
+    volumes:
+      - vector-db-data:/var/lib/weaviate
+    ports:
+      - "8000:8080"
+    networks:
+      - aureus-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/v1/.well-known/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================================
+  # Core Services
+  # ============================================================================
+
+  # Aureus-Sentinel Bridge (Signing Service)
+  bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aureus-bridge
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Server
+      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-development}
+      
+      # Keys
+      USE_KMS: ${USE_KMS:-false}
+      PRIVATE_KEY_PATH: ${PRIVATE_KEY_PATH:-./keys/private.pem}
+      
+      # Database (for audit logs)
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: bridge
+      POSTGRES_USER: aureus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aureus_dev_password}
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
+      # Security
+      API_KEY: ${BRIDGE_API_KEY:-dev_bridge_key_change_in_prod}
+      RATE_LIMIT_MAX_REQUESTS: 100
+      RATE_LIMIT_WINDOW_MS: 60000
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: json
+    ports:
+      - "3000:3000"
+    networks:
+      - aureus-network
+    volumes:
+      - ./keys:/app/keys:ro
+      - ./logs/bridge:/app/logs
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # Aureus Agentic OS (Policy Engine)
+  aureus-os:
+    image: aureus/agentic-os:latest  # Replace with actual image
+    container_name: aureus-os
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      vector-db:
+        condition: service_healthy
+    environment:
+      # Server
+      PORT: 5000
+      FLASK_ENV: ${FLASK_ENV:-development}
+      FLASK_APP: app.py
+      
+      # Database
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: aureus_os
+      POSTGRES_USER: aureus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aureus_dev_password}
+      
+      # Vector DB
+      VECTOR_DB_TYPE: weaviate
+      WEAVIATE_URL: http://vector-db:8080
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
+      # Bridge Integration
+      BRIDGE_URL: http://bridge:3000
+      BRIDGE_API_KEY: ${BRIDGE_API_KEY:-dev_bridge_key_change_in_prod}
+      
+      # ML Models
+      RISK_MODEL_PATH: /app/models/risk_assessment.pkl
+      POLICY_MODEL_PATH: /app/models/policy_engine.pkl
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "5000:5000"
+    networks:
+      - aureus-network
+    volumes:
+      - ./models:/app/models:ro
+      - ./logs/aureus-os:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # OpenClaw (Multi-Channel Platform)
+  openclaw:
+    image: openclaw/platform:latest  # Replace with actual image
+    container_name: openclaw
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      bridge:
+        condition: service_healthy
+      aureus-os:
+        condition: service_healthy
+    environment:
+      # Server
+      PORT: 8080
+      WS_PORT: 8081
+      NODE_ENV: ${NODE_ENV:-development}
+      
+      # Service URLs
+      BRIDGE_URL: http://bridge:3000
+      BRIDGE_API_KEY: ${BRIDGE_API_KEY:-dev_bridge_key_change_in_prod}
+      AUREUS_OS_URL: http://aureus-os:5000
+      
+      # Database
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: openclaw
+      POSTGRES_USER: aureus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aureus_dev_password}
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
+      # Channel Tokens (set in .env file)
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${SLACK_APP_TOKEN:-}
+      
+      # Security
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_prod}
+      SESSION_SECRET: ${SESSION_SECRET:-dev_session_secret_change_in_prod}
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8080:8080"  # HTTP API
+      - "8081:8081"  # WebSocket
+    networks:
+      - aureus-network
+    volumes:
+      - ./logs/openclaw:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # ============================================================================
+  # Monitoring & Observability
+  # ============================================================================
+
+  # Prometheus (Metrics Collection)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aureus-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - aureus-network
+    depends_on:
+      - bridge
+      - aureus-os
+      - openclaw
+    restart: unless-stopped
+
+  # Grafana (Visualization)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aureus-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "3001:3000"
+    networks:
+      - aureus-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Loki (Log Aggregation)
+  loki:
+    image: grafana/loki:latest
+    container_name: aureus-loki
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./monitoring/loki.yml:/etc/loki/loki.yml:ro
+    ports:
+      - "3100:3100"
+    networks:
+      - aureus-network
+    restart: unless-stopped
+
+  # Promtail (Log Shipper)
+  promtail:
+    image: grafana/promtail:latest
+    container_name: aureus-promtail
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./monitoring/promtail.yml:/etc/promtail/promtail.yml:ro
+      - ./logs:/logs:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks:
+      - aureus-network
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # ============================================================================
+  # Development Tools (Optional)
+  # ============================================================================
+
+  # pgAdmin (Database Management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: aureus-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@aureus.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    networks:
+      - aureus-network
+    depends_on:
+      - postgres
+    profiles:
+      - dev
+    restart: unless-stopped
+
+  # Redis Commander (Redis Management)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: aureus-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8082:8081"
+    networks:
+      - aureus-network
+    depends_on:
+      - redis
+    profiles:
+      - dev
+    restart: unless-stopped
+
+# ============================================================================
+# Volume Backup Configuration
+# ============================================================================
+# Volumes are persisted on host machine
+# Backup strategy:
+# - postgres-data: Daily backup via pg_dump
+# - redis-data: RDB snapshots every 6 hours
+# - vector-db-data: Daily backup
+# - prometheus-data: Retention policy (30 days)
+# - grafana-data: Configuration as code
+
+# ============================================================================
+# Usage Instructions
+# ============================================================================
+# 
+# Start full stack:
+#   docker-compose -f docker-compose-full.yml up -d
+# 
+# Start with dev tools:
+#   docker-compose -f docker-compose-full.yml --profile dev up -d
+# 
+# View logs:
+#   docker-compose -f docker-compose-full.yml logs -f [service-name]
+# 
+# Stop all services:
+#   docker-compose -f docker-compose-full.yml down
+# 
+# Stop and remove volumes:
+#   docker-compose -f docker-compose-full.yml down -v
+# 
+# Scale a service:
+#   docker-compose -f docker-compose-full.yml up -d --scale openclaw=3
+# 
+# ============================================================================
+# Access URLs (localhost)
+# ============================================================================
+# OpenClaw API:       http://localhost:8080
+# OpenClaw WebSocket: ws://localhost:8081
+# Bridge API:         http://localhost:3000
+# Aureus OS API:      http://localhost:5000
+# Prometheus:         http://localhost:9090
+# Grafana:            http://localhost:3001 (admin/admin)
+# Loki:               http://localhost:3100
+# PostgreSQL:         localhost:5432
+# Redis:              localhost:6379
+# Weaviate:           http://localhost:8000
+# pgAdmin:            http://localhost:5050 (dev profile)
+# Redis Commander:    http://localhost:8082 (dev profile)

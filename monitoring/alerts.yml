@@ -1,0 +1,175 @@
+# Prometheus Alerting Rules for Aureus Sentinel Stack
+
+groups:
+  - name: aureus_sentinel_alerts
+    interval: 30s
+    rules:
+      # Service Availability Alerts
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute."
+
+      # Bridge Alerts
+      - alert: BridgeHighErrorRate
+        expr: rate(bridge_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bridge has high error rate"
+          description: "Bridge error rate is {{ $value }} errors/sec over the last 5 minutes."
+
+      - alert: BridgeSlowSignatures
+        expr: histogram_quantile(0.95, rate(bridge_signature_duration_seconds_bucket[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bridge signatures are slow"
+          description: "95th percentile signature time is {{ $value }}s (threshold: 0.1s)."
+
+      - alert: BridgeHighCPU
+        expr: rate(process_cpu_seconds_total{job="bridge"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bridge CPU usage is high"
+          description: "Bridge CPU usage is {{ $value | humanizePercentage }} for more than 10 minutes."
+
+      # Aureus OS Alerts
+      - alert: AureusOSHighErrorRate
+        expr: rate(aureus_os_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Aureus OS has high error rate"
+          description: "Aureus OS error rate is {{ $value }} errors/sec over the last 5 minutes."
+
+      - alert: AureusOSSlowAssessments
+        expr: histogram_quantile(0.95, rate(aureus_os_assessment_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Aureus OS assessments are slow"
+          description: "95th percentile assessment time is {{ $value }}s (threshold: 0.5s)."
+
+      # OpenClaw Alerts
+      - alert: OpenClawHighErrorRate
+        expr: rate(openclaw_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "OpenClaw has high error rate"
+          description: "OpenClaw error rate is {{ $value }} errors/sec over the last 5 minutes."
+
+      - alert: OpenClawHighLatency
+        expr: histogram_quantile(0.95, rate(openclaw_request_duration_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "OpenClaw has high latency"
+          description: "95th percentile request time is {{ $value }}s (threshold: 1.0s)."
+
+      - alert: OpenClawHighActiveConnections
+        expr: openclaw_active_connections > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "OpenClaw has many active connections"
+          description: "OpenClaw has {{ $value }} active connections (threshold: 1000)."
+
+      # Database Alerts
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database has been down for more than 1 minute."
+
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL connection pool is filling up"
+          description: "PostgreSQL connection usage is {{ $value | humanizePercentage }}."
+
+      # Redis Alerts
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache has been down for more than 1 minute."
+
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}."
+
+      # System Resource Alerts
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value | humanizePercentage }}."
+
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is {{ $value | humanizePercentage }} on {{ $labels.mountpoint }}."
+
+      # Integration Alerts
+      - alert: EndToEndLatencyHigh
+        expr: histogram_quantile(0.95, rate(aureus_end_to_end_duration_seconds_bucket[5m])) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "End-to-end flow latency is high"
+          description: "95th percentile end-to-end latency is {{ $value }}s (threshold: 2.0s)."
+
+      - alert: SignatureVerificationFailures
+        expr: rate(bridge_signature_verification_failures_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Signature verification failures detected"
+          description: "Signature verification failure rate is {{ $value }} failures/sec."
+
+      - alert: PolicyViolations
+        expr: rate(aureus_os_policy_violations_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of policy violations"
+          description: "Policy violation rate is {{ $value }} violations/sec."

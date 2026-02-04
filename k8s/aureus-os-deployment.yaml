@@ -1,0 +1,243 @@
+# Aureus Agentic OS Deployment for Kubernetes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aureus-os
+  namespace: aureus
+  labels:
+    app: aureus-os
+    component: policy-engine
+    version: v1
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: aureus-os
+  template:
+    metadata:
+      labels:
+        app: aureus-os
+        component: policy-engine
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/api/metrics"
+    spec:
+      serviceAccountName: aureus-os
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      
+      initContainers:
+      # Download ML models (optional)
+      - name: init-models
+        image: busybox:latest
+        command: ['sh', '-c', 'echo "ML models initialized"']
+        volumeMounts:
+        - name: models
+          mountPath: /models
+      
+      containers:
+      - name: aureus-os
+        image: aureus/agentic-os:latest  # Replace with actual image
+        imagePullPolicy: Always
+        
+        ports:
+        - name: http
+          containerPort: 5000
+          protocol: TCP
+        
+        env:
+        # Server
+        - name: PORT
+          value: "5000"
+        - name: FLASK_ENV
+          value: "production"
+        - name: FLASK_APP
+          value: "app.py"
+        
+        # Database
+        - name: POSTGRES_HOST
+          value: "postgres-service.aureus.svc.cluster.local"
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_DB
+          value: "aureus_os"
+        - name: POSTGRES_USER
+          value: "aureus"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: password
+        
+        # Vector DB
+        - name: VECTOR_DB_TYPE
+          value: "weaviate"
+        - name: WEAVIATE_URL
+          value: "http://weaviate-service.aureus.svc.cluster.local:8080"
+        
+        # Redis
+        - name: REDIS_HOST
+          value: "redis-service.aureus.svc.cluster.local"
+        - name: REDIS_PORT
+          value: "6379"
+        
+        # Bridge Integration
+        - name: BRIDGE_URL
+          value: "http://bridge-service.aureus.svc.cluster.local:3000"
+        - name: BRIDGE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aureus-os-secrets
+              key: BRIDGE_API_KEY
+        
+        # ML Models
+        - name: RISK_MODEL_PATH
+          value: "/models/risk_assessment.pkl"
+        - name: POLICY_MODEL_PATH
+          value: "/models/policy_engine.pkl"
+        
+        # Logging
+        - name: LOG_LEVEL
+          value: "info"
+        
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 1Gi
+          limits:
+            cpu: 4000m
+            memory: 4Gi
+        
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: http
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: logs
+          mountPath: /app/logs
+        - name: models
+          mountPath: /models
+          readOnly: true
+      
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+      - name: models
+        emptyDir: {}  # In production, use PersistentVolumeClaim for models
+      
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - aureus-os
+              topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aureus-os-service
+  namespace: aureus
+  labels:
+    app: aureus-os
+spec:
+  type: ClusterIP
+  selector:
+    app: aureus-os
+  ports:
+  - name: http
+    port: 5000
+    targetPort: http
+    protocol: TCP
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aureus-os
+  namespace: aureus
+  labels:
+    app: aureus-os
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aureus-os-secrets
+  namespace: aureus
+ labels:
+    app: aureus-os
+type: Opaque
+data:
+  # Base64-encoded secrets (replace with actual values)
+  BRIDGE_API_KEY: ZGV2X2JyaWRnZV9rZXlfY2hhbmdlX2luX3Byb2Q=
+
+---
+# HPA for Aureus OS
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: aureus-os-hpa
+  namespace: aureus
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: aureus-os
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

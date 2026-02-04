@@ -1,0 +1,214 @@
+# OpenClaw Deployment for Kubernetes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openclaw
+  namespace: aureus
+  labels:
+    app: openclaw
+    component: channels
+    version: v1
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: openclaw
+  template:
+    metadata:
+      labels:
+        app: openclaw
+        component: channels
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/api/metrics"
+    spec:
+      serviceAccountName: aureus-openclaw
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      
+      containers:
+      - name: openclaw
+        image: openclaw/platform:latest  # Replace with actual image
+        imagePullPolicy: Always
+        
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: websocket
+          containerPort: 8081
+          protocol: TCP
+        
+        env:
+        # ConfigMap values
+        - name: PORT
+          value: "8080"
+        - name: WS_PORT
+          value: "8081"
+        - name: NODE_ENV
+          value: "production"
+        
+        # Service URLs
+        - name: BRIDGE_URL
+          value: "http://bridge-service.aureus.svc.cluster.local:3000"
+        - name: AUREUS_OS_URL
+          value: "http://aureus-os-service.aureus.svc.cluster.local:5000"
+        
+        # Database
+        - name: POSTGRES_HOST
+          value: "postgres-service.aureus.svc.cluster.local"
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_DB
+          value: "openclaw"
+        - name: POSTGRES_USER
+          value: "aureus"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secrets
+              key: password
+        
+        # Redis
+        - name: REDIS_HOST
+          value: "redis-service.aureus.svc.cluster.local"
+       - name: REDIS_PORT
+          value: "6379"
+        
+        # Secrets
+        - name: BRIDGE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openclaw-secrets
+              key: BRIDGE_API_KEY
+        - name: TELEGRAM_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: openclaw-secrets
+              key: TELEGRAM_BOT_TOKEN
+        - name: DISCORD_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: openclaw-secrets
+              key: DISCORD_BOT_TOKEN
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: openclaw-secrets
+              key: JWT_SECRET
+        
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+        
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: logs
+          mountPath: /app/logs
+      
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+      
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - openclaw
+              topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openclaw-service
+  namespace: aureus
+  labels:
+    app: openclaw
+spec:
+  type: ClusterIP
+  selector:
+    app: openclaw
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+    protocol: TCP
+  - name: websocket
+    port: 8081
+    targetPort: websocket
+    protocol: TCP
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aureus-openclaw
+  namespace: aureus
+  labels:
+    app: openclaw
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: openclaw-secrets
+  namespace: aureus
+  labels:
+    app: openclaw
+type: Opaque
+data:
+  # Base64-encoded secrets (replace with actual values)
+  BRIDGE_API_KEY: ZGV2X2JyaWRnZV9rZXlfY2hhbmdlX2luX3Byb2Q=
+  TELEGRAM_BOT_TOKEN: ""
+  DISCORD_BOT_TOKEN: ""
+  JWT_SECRET: ZGV2X2p3dF9zZWNyZXRfY2hhbmdlX2luX3Byb2Q=
