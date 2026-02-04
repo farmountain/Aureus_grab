@@ -12,7 +12,8 @@ knowledgebase/openclaw/
 knowledgebase/Aureus-Sentinel/
 
 # Root-level external repos (should not be committed)
-Aureus_Agentic_OS/
+# Note: Aureus_Agentic_OS/ now contains demo stub implementation and IS committed
+# Aureus_Agentic_OS/
 openclaw/
 
 # Planning artifacts (not implementation)
