@@ -49,29 +49,44 @@ An integration of [OpenClaw](https://github.com/openclaw) (previously Moltbot) w
 
 ## Quick Start
 
-### Prerequisites
-- Node.js 18+
-- Git
-- (Optional) AWS account for KMS integration
-
 ### Installation
+
+**Fastest way to get started:**
+
+```bash
+# Install CLI globally
+npm install -g @aureus-sentinel/cli
+
+# Test connectivity (starts a Bridge server if not running)
+aureus test
+
+# Or use Docker
+docker run -p 3000:3000 ghcr.io/farmountain/aureus-bridge:latest
+```
+
+**For developers:**
+
+```bash
+# Install SDK in your project
+npm install @aureus-sentinel/bridge-client
+```
+
+**From source:**
 
 ```bash
 # Clone repository
 git clone https://github.com/farmountain/Aureus-Sentinel.git
 cd Aureus-Sentinel
 
-# Install dependencies (bridge service)
+# Install dependencies
 cd Aureus-Sentinel/bridge
 npm install
 
-# Run tests
-cd ..
-node tests/schema-test-runner.js
-node tests/signer.test.js
-node tests/integration.test.js
-node tests/executor_wrapper.test.js
+# Start bridge
+node server.js
 ```
+
+See [INSTALLATION.md](docs/INSTALLATION.md) for complete installation instructions (Windows, macOS, Linux, Docker, Kubernetes).
 
 ### Running the Bridge
 
@@ -84,12 +99,33 @@ node server.js
 USE_KMS=true \
 KMS_KEY_ARN=arn:aws:kms:us-east-1:123456789:key/... \
 node server.js
+
+# Docker
+docker run -p 3000:3000 ghcr.io/farmountain/aureus-bridge:latest
+
+# Docker Compose
+docker-compose up -d
+
+# Kubernetes
+kubectl apply -f k8s/ -n aureus
 ```
 
 The bridge will:
 1. Generate ephemeral ed25519 keypair (dev) or load from KMS (prod)
 2. Print `PUBLIC_KEY_BASE64:` to stdout
 3. Listen on `http://localhost:3000/sign` for approval requests
+
+### Quick Start Scripts
+
+**Linux/macOS:**
+```bash
+curl -sL https://raw.githubusercontent.com/farmountain/Aureus-Sentinel/main/scripts/install.sh | bash
+```
+
+**Windows PowerShell:**
+```powershell
+iwr -useb https://raw.githubusercontent.com/farmountain/Aureus-Sentinel/main/scripts/install.ps1 | iex
+```
 
 ### Integration with OpenClaw
 
@@ -173,20 +209,48 @@ openspec/                     # OpenSpec proposals
 **Week 9** ✅ — Reliability + error handling  
 **Week 10** ✅ — Performance + load testing  
 **Week 11** ✅ — Documentation + developer experience  
-**Week 12** — Packaging + release automation  
+**Week 12** ✅ — Packaging + release automation  
 **Week 13** — Pilot deployment + monitoring  
 **Week 14** — Executive readiness + handoff
 
 See [Aureus-Sentinel/docs/implementation_backlog.md](Aureus-Sentinel/docs/implementation_backlog.md) for detailed roadmap.
 
+## Installation & Deployment
+
+- **[Installation Guide](docs/INSTALLATION.md)** — Complete installation instructions for all platforms
+  - npm installation (CLI and SDK)
+  - Docker installation (single container and compose)
+  - Manual installation from source
+  - Platform-specific guides (Windows, macOS, Linux)
+  - Quick start scripts (automated installation)
+  - Kubernetes deployment (production-ready manifests)
+
 ## Documentation
 
+### Getting Started
+- **[Installation Guide](docs/INSTALLATION.md)** — Installation for all platforms
+- **[Getting Started](Aureus-Sentinel/docs/GETTING_STARTED.md)** — First steps and tutorials
+- **[API Reference](Aureus-Sentinel/docs/API_REFERENCE.md)** — Complete API documentation
+
+### SDK & CLI
+- **[SDK Documentation](Aureus-Sentinel/sdk/README.md)** — TypeScript SDK for Bridge integration
+- **[CLI Documentation](Aureus-Sentinel/cli/README.md)** — Command-line tool for testing and dev
+
+### Architecture & Design
 - **[PRD](docs/PRD_Aureus_Project.md)** — Product requirements and success metrics
 - **[Requirements](docs/Requirements_Aureus.md)** — Functional and non-functional requirements
 - **[Architecture Overview](docs/architecture_overview.md)** — System design and interfaces
 - **[Architecture Diagrams](Aureus-Sentinel/docs/architecture/)** — Component and sequence diagrams
 - **[Key Management Guide](docs/key_management_and_kms.md)** — KMS integration and rotation
+
+### Operations
+- **[Troubleshooting Guide](Aureus-Sentinel/docs/TROUBLESHOOTING.md)** — Common issues and solutions
+- **[Performance Testing](Aureus-Sentinel/performance/README.md)** — Load testing and benchmarks
+- **[Kubernetes Deployment](k8s/README.md)** — Production Kubernetes setup
+
+### Development
 - **[Executor Wrapper Reference](Aureus-Sentinel/docs/executor_wrapper_reference.js)** — Enforcement implementation
+- **[Examples](Aureus-Sentinel/examples/)** — Code examples and tutorials
 - **[Session Packs](docs/)** — Week-by-week execution guides
 
 ## Testing
@@ -245,4 +309,17 @@ MIT License — See [LICENSE](LICENSE)
 
 ---
 
-**Status**: Week 11 Complete — Documentation & Developer Experience ✅
+**Status**: Week 12 Complete — Packaging & Release Automation ✅  
+**Latest Release**: v1.0.0 Ready for Production
+
+### Installation
+```bash
+# Get started in seconds
+npm install -g @aureus-sentinel/cli
+aureus test
+
+# Or with Docker
+docker run -p 3000:3000 ghcr.io/farmountain/aureus-bridge:latest
+```
+
+See [INSTALLATION.md](docs/INSTALLATION.md) for more options.

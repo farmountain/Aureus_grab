@@ -1,0 +1,191 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'Aureus-Sentinel/bridge/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd Aureus-Sentinel/bridge
+          npm ci
+
+      - name: Run schema tests
+        run: node tests/schema-test-runner.js
+
+      - name: Run signer tests
+        run: node tests/signer.test.js
+
+      - name: Run integration tests
+        run: node tests/integration.test.js
+
+      - name: Run SDK tests
+        run: node tests/sdk.test.js
+
+  publish-npm:
+    name: Publish to npm
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Extract version from tag
+        id: extract_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update SDK version
+        run: |
+          cd Aureus-Sentinel/sdk
+          npm version ${{ steps.extract_version.outputs.VERSION }} --no-git-tag-version
+
+      - name: Publish SDK to npm
+        run: |
+          cd Aureus-Sentinel/sdk
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Update CLI version
+        run: |
+          cd Aureus-Sentinel/cli
+          npm version ${{ steps.extract_version.outputs.VERSION }} --no-git-tag-version
+
+      - name: Publish CLI to npm
+        run: |
+          cd Aureus-Sentinel/cli
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  build-docker:
+    name: Build and Push Docker Images
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ secrets.DOCKER_USERNAME }}/aureus-bridge
+            ghcr.io/${{ github.repository_owner }}/aureus-bridge
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  create-release:
+    name: Create GitHub Release
+    needs: [test, publish-npm, build-docker]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -z "$PREV_TAG" ]; then
+            CHANGES=$(git log --pretty=format:"* %s (%h)" HEAD)
+          else
+            CHANGES=$(git log --pretty=format:"* %s (%h)" ${PREV_TAG}..HEAD)
+          fi
+          
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref_name }}
+          body: |
+            ## What's Changed
+            
+            ${{ steps.changelog.outputs.CHANGELOG }}
+            
+            ## Installation
+            
+            ### npm
+            ```bash
+            npm install -g @aureus-sentinel/cli
+            npm install @aureus-sentinel/bridge-client
+            ```
+            
+            ### Docker
+            ```bash
+            docker pull ghcr.io/${{ github.repository_owner }}/aureus-bridge:${{ github.ref_name }}
+            ```
+            
+            ## Documentation
+            - [Getting Started](https://github.com/${{ github.repository }}/blob/main/docs/GETTING_STARTED.md)
+            - [API Reference](https://github.com/${{ github.repository }}/blob/main/docs/API_REFERENCE.md)
+            - [Troubleshooting](https://github.com/${{ github.repository }}/blob/main/docs/TROUBLESHOOTING.md)
+          draft: false
+          prerelease: false

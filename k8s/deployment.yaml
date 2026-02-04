@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aureus-bridge
+  namespace: aureus
+  labels:
+    app: aureus-bridge
+    version: v1
+spec:
+  replicas: 3  # High availability with 3 replicas
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: aureus-bridge
+  template:
+    metadata:
+      labels:
+        app: aureus-bridge
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: aureus-bridge
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      
+      containers:
+      - name: aureus-bridge
+        image: ghcr.io/farmountain/aureus-bridge:latest
+        imagePullPolicy: Always
+        
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+        
+        env:
+        # ConfigMap values
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-bridge-config
+              key: PORT
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-bridge-config
+              key: NODE_ENV
+        - name: USE_KMS
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-bridge-config
+              key: USE_KMS
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-bridge-config
+              key: LOG_LEVEL
+        - name: RATE_LIMIT_MAX_REQUESTS
+          valueFrom:
+            configMapKeyRef:
+              name: aureus-bridge-config
+              key: RATE_LIMIT_MAX_REQUESTS
+        
+        # Secret values
+        - name: PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aureus-bridge-secrets
+              key: PRIVATE_KEY
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aureus-bridge-secrets
+              key: API_KEY
+        
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1001
+          capabilities:
+            drop:
+            - ALL
+        
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: logs
+          mountPath: /app/logs
+      
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+      
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - aureus-bridge
+              topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aureus-bridge
+  namespace: aureus
+  labels:
+    app: aureus-bridge

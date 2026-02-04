@@ -1,0 +1,27 @@
+# Aureus Sentinel Bridge - Development Docker Image
+FROM node:20-alpine
+
+# Install development tools
+RUN apk add --no-cache \
+    git \
+    curl \
+    bash
+
+WORKDIR /app
+
+# Copy package files
+COPY Aureus-Sentinel/bridge/package*.json ./
+
+# Install all dependencies (including dev)
+RUN npm install
+
+# Copy source code
+COPY Aureus-Sentinel/ ./Aureus-Sentinel/
+COPY contracts/ ./contracts/
+COPY tests/ ./tests/
+
+# Expose port
+EXPOSE 3000
+
+# Start server with auto-reload
+CMD ["node", "--watch", "Aureus-Sentinel/bridge/server.js"]

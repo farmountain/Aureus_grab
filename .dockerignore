@@ -1,0 +1,68 @@
+# Docker ignore file for Aureus Sentinel
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Test files
+test/
+tests/
+coverage/
+.nyc_output/
+
+# Build artifacts
+dist/
+build/
+tmp/
+
+# Documentation
+docs/
+README.md
+LICENSE
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
+
+# Keys (security)
+keys/
+*.pem
+*.key
+
+# Week evidence files
+**/evidence/
+**/*-session-pack.md
+
+# OpenSpec
+openspec/
+
+# Examples
+examples/

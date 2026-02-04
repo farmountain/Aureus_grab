@@ -1,0 +1,49 @@
+# Exclude from npm package
+node_modules/
+*.log
+*.lock
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test files
+test/
+tests/
+*.test.js
+coverage/
+.nyc_output/
+
+# Documentation (keep README only)
+docs/
+examples/
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Build artifacts
+dist/
+build/
+tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Config files
+.aureus-cli.json

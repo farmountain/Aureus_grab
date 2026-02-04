@@ -1,0 +1,95 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: aureus-bridge-network-policy
+  namespace: aureus
+  labels:
+    app: aureus-bridge
+spec:
+  podSelector:
+    matchLabels:
+      app: aureus-bridge
+  
+  policyTypes:
+  - Ingress
+  - Egress
+  
+  ingress:
+  # Allow traffic from Ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 3000
+  
+  # Allow traffic from same namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: aureus
+    ports:
+    - protocol: TCP
+      port: 3000
+  
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+  
+  # Allow HTTPS (for AWS KMS, npm registry, etc.)
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+  
+  # Allow HTTP (if needed)
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 80
+
+---
+# Default deny all ingress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: aureus
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+
+---
+# Allow egress to AWS KMS (if using KMS)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-kms-egress
+  namespace: aureus
+  labels:
+    app: aureus-bridge
+spec:
+  podSelector:
+    matchLabels:
+      app: aureus-bridge
+  
+  policyTypes:
+  - Egress
+  
+  egress:
+  # AWS KMS endpoint (adjust for your region)
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443

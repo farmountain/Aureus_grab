@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aureus
+  labels:
+    name: aureus
+    app.kubernetes.io/name: aureus-sentinel
+    app.kubernetes.io/part-of: aureus

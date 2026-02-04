@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aureus-bridge-config
+  namespace: aureus
+  labels:
+    app: aureus-bridge
+data:
+  # Server Configuration
+  PORT: "3000"
+  NODE_ENV: "production"
+  
+  # Key Management
+  USE_KMS: "false"  # Set to "true" for AWS KMS
+  # KMS_KEY_ID: "alias/aureus-bridge"
+  # AWS_REGION: "us-east-1"
+  
+  # Logging
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  
+  # Rate Limiting
+  RATE_LIMIT_MAX_REQUESTS: "100"
+  RATE_LIMIT_WINDOW_MS: "60000"
+  
+  # Security
+  CORS_ORIGINS: "*"  # Update with your allowed origins
+  
+  # Event Store
+  EVENT_STORE_MAX_SIZE: "10000"
+  
+  # Replay
+  ENABLE_REPLAY: "true"

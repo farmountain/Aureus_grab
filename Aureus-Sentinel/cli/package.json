@@ -7,7 +7,19 @@
     "aureus": "./aureus-cli.js"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "prepublishOnly": "npm test",
+    "version": "npm run prepublishOnly",
+    "postversion": "git push && git push --tags",
+    "postinstall": "echo '\n✅ Aureus CLI installed successfully!\n\nTry: aureus --help\nDocs: https://github.com/farmountain/Aureus-Sentinel\n'",
+    "build": "pkg . --config pkg.config.json --out-path dist",
+    "build:linux": "pkg . --targets node18-linux-x64 --output dist/aureus-linux-x64",
+    "build:macos": "pkg . --targets node18-macos-x64,node18-macos-arm64 --output dist/aureus-macos",
+    "build:win": "pkg . --targets node18-win-x64 --output dist/aureus-win-x64.exe",
+    "build:all": "npm run build:linux && npm run build:macos && npm run build:win",
+    "package:deb": "node scripts/build-deb.js",
+    "package:rpm": "node scripts/build-rpm.js",
+    "package:all": "npm run build:all && npm run package:deb && npm run package:rpm"
   },
   "keywords": [
     "aureus",
@@ -15,17 +27,31 @@
     "cli",
     "bridge",
     "cryptography",
-    "signing"
+    "signing",
+    "command-line",
+    "tool",
+    "ed25519"
   ],
   "author": "Aureus Sentinel Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/aureus-sentinel"
+    "url": "https://github.com/farmountain/Aureus-Sentinel.git",
+    "directory": "Aureus-Sentinel/cli"
   },
+  "bugs": {
+    "url": "https://github.com/farmountain/Aureus-Sentinel/issues"
+  },
+  "homepage": "https://github.com/farmountain/Aureus-Sentinel#readme",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   },
+  "files": [
+    "aureus-cli.js",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "@aureus-sentinel/bridge-client": "^1.0.0",
     "commander": "^11.0.0",
@@ -33,5 +59,9 @@
   },
   "devDependencies": {
     "jest": "^29.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
