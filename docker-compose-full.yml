@@ -137,65 +137,66 @@ services:
       start_period: 40s
     restart: unless-stopped
 
-  # Aureus OS (Policy Engine) - Built from real source
-  aureus-os:
-    build:
-      context: ./Aureus_Agentic_OS
-      dockerfile: Dockerfile
-    image: aureus/console:latest
-    container_name: aureus-console
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      vector-db:
-        condition: service_healthy
-    environment:
-      # Server
-      PORT: 5000
-      FLASK_ENV: ${FLASK_ENV:-development}
-      FLASK_APP: app.py
-      
-      # Database
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: aureus_os
-      POSTGRES_USER: aureus
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aureus_dev_password}
-      
-      # Vector DB
-      VECTOR_DB_TYPE: weaviate
-      WEAVIATE_URL: http://vector-db:8080
-      
-      # Redis
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      
-      # Bridge Integration
-      BRIDGE_URL: http://bridge:3000
-      BRIDGE_API_KEY: ${BRIDGE_API_KEY:-dev_bridge_key_change_in_prod}
-      
-      # ML Models
-      RISK_MODEL_PATH: /app/models/risk_assessment.pkl
-      POLICY_MODEL_PATH: /app/models/policy_engine.pkl
-      
-      # Logging
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-    ports:
-      - "5000:5000"
-    networks:
-      - aureus-network
-    volumes:
-      - ./models:/app/models:ro
-      - ./logs/aureus-os:/app/logs
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
+  # Aureus OS (Policy Engine) - TEMPORARILY DISABLED due to TypeScript build errors in source code
+  # TODO: Fix compilation errors in @aureus/policy package before enabling
+  # aureus-os:
+  #   build:
+  #     context: ./Aureus_Agentic_OS
+  #     dockerfile: Dockerfile
+  #   image: aureus/console:latest
+  #   container_name: aureus-console
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     vector-db:
+  #       condition: service_healthy
+  #   environment:
+  #     # Server
+  #     PORT: 5000
+  #     FLASK_ENV: ${FLASK_ENV:-development}
+  #     FLASK_APP: app.py
+  #     
+  #     # Database
+  #     POSTGRES_HOST: postgres
+  #     POSTGRES_PORT: 5432
+  #     POSTGRES_DB: aureus_os
+  #     POSTGRES_USER: aureus
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aureus_dev_password}
+  #     
+  #     # Vector DB
+  #     VECTOR_DB_TYPE: weaviate
+  #     WEAVIATE_URL: http://vector-db:8080
+  #     
+  #     # Redis
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #     
+  #     # Bridge Integration
+  #     BRIDGE_URL: http://bridge:3000
+  #     BRIDGE_API_KEY: ${BRIDGE_API_KEY:-dev_bridge_key_change_in_prod}
+  #     
+  #     # ML Models
+  #     RISK_MODEL_PATH: /app/models/risk_assessment.pkl
+  #     POLICY_MODEL_PATH: /app/models/policy_engine.pkl
+  #     
+  #     # Logging
+  #     LOG_LEVEL: ${LOG_LEVEL:-info}
+  #   ports:
+  #     - "5000:5000"
+  #   networks:
+  #     - aureus-network
+  #   volumes:
+  #     - ./models:/app/models:ro
+  #     - ./logs/aureus-os:/app/logs
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+  #   restart: unless-stopped
 
   # OpenClaw (Multi-Channel Platform) - Built from real source
   openclaw:
@@ -211,8 +212,9 @@ services:
         condition: service_healthy
       bridge:
         condition: service_healthy
-      aureus-os:
-        condition: service_healthy
+      # aureus-os dependency removed (service temporarily disabled)
+      # aureus-os:
+      #   condition: service_healthy
     environment:
       # Server
       PORT: 8080
@@ -285,7 +287,7 @@ services:
       - aureus-network
     depends_on:
       - bridge
-      - aureus-os
+      # - aureus-os  # Temporarily disabled
       - openclaw
     restart: unless-stopped
 

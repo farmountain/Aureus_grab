@@ -1,28 +1,7 @@
 # Aureus Sentinel Bridge - Production Docker Image
-# Multi-stage build for minimal final image size
+# Simple build (no npm dependencies - uses only Node.js built-ins)
 
-# Stage 1: Dependencies
-FROM node:20-alpine AS dependencies
-
-WORKDIR /app
-
-# Copy package files
-COPY Aureus-Sentinel/bridge/package*.json ./
-
-# Install production dependencies only
-RUN npm ci --only=production
-
-# Stage 2: Builder (if needed for future compilation)
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# Copy source and dependencies
-COPY --from=dependencies /app/node_modules ./node_modules
-COPY Aureus-Sentinel/bridge/ ./
-
-# Stage 3: Production
-FROM node:20-alpine AS production
+FROM node:20-alpine
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
@@ -33,13 +12,13 @@ RUN addgroup -g 1001 -S aureus && \
 
 WORKDIR /app
 
-# Copy dependencies and source
-COPY --from=dependencies --chown=aureus:aureus /app/node_modules ./node_modules
+# Copy application files (bridge has no npm dependencies)
 COPY --chown=aureus:aureus Aureus-Sentinel/bridge/ ./
 COPY --chown=aureus:aureus contracts/ ./contracts/
 
-# Create directory for keys (if not using KMS)
-RUN mkdir -p /app/keys && chown aureus:aureus /app/keys
+# Create directory for keys and logs
+RUN mkdir -p /app/keys /app/logs /app/events && \
+    chown -R aureus:aureus /app
 
 # Switch to non-root user
 USER aureus
@@ -65,3 +44,4 @@ LABEL org.opencontainers.image.url="https://github.com/farmountain/Aureus-Sentin
 LABEL org.opencontainers.image.documentation="https://github.com/farmountain/Aureus-Sentinel/blob/main/README.md"
 LABEL org.opencontainers.image.source="https://github.com/farmountain/Aureus-Sentinel"
 LABEL org.opencontainers.image.licenses="MIT"
+

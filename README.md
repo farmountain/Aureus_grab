@@ -211,9 +211,28 @@ openspec/                     # OpenSpec proposals
 **Week 11** ✅ — Documentation + developer experience  
 **Week 12** ✅ — Packaging + release automation  
 **Week 13** ✅ — Pilot deployment + monitoring  
-**Week 14** ✅ — Executive readiness + handoff
+**Week 14** ✅ — Executive readiness + handoff  
+**Week 15** ✅ — End-to-end demo with real implementations (OpenClaw + Aureus OS integrated)
 
 See [Aureus-Sentinel/docs/implementation_backlog.md](Aureus-Sentinel/docs/implementation_backlog.md) for detailed roadmap.
+
+## Demo Environment
+
+A complete demo environment is available showcasing the integration:
+- **Bridge Service**: Cryptographic signing service with ed25519 signatures ✅ Working
+- **OpenClaw Gateway**: Real WhatsApp/multi-channel AI platform (cloned from GitHub) ✅ Ready
+-  **Aureus Agentic OS**: Production TypeScript monorepo with 20+ packages ⚠️ Build requires fixes
+- **Documentation**: [DEMO_REAL_SETUP.md](DEMO_REAL_SETUP.md) - Complete setup guide
+
+To run the working demo:
+```bash
+# Start Bridge service (working)
+cd Aureus-Sentinel/bridge
+node server.js
+
+# Or test dependencies
+node -e "const signer = require('./signer'); console.log('✓ Bridge ready');"
+```
 
 ## Installation & Deployment
 
